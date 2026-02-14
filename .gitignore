@@ -1,0 +1,14 @@
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+temp_train_*/
+images/
+
+# Old/unused models - only keep the best one
+keras_cifar10_trained_model.h5
+keras_cifar10_trained_model_orig.h5
+lov_trained_model_Augmentation.h5
+lov_trained_model_Augmentation_orig.h5
+RLAI_LOVAIC_trained_model_1.h5
+RLAI_LOVAIC_trained_model_1_Augmentation.h5
