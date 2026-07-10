@@ -1,0 +1,6 @@
+venv/
+__pycache__/
+*.pyc
+storage/*.mp4
+storage/lostfound.json
+.pytest_cache/

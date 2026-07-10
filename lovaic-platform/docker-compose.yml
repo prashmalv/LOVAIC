@@ -1,0 +1,30 @@
+# LOVAIC Vision Intelligence Platform — one-command deploy.
+#   docker compose up --build
+# then open http://localhost:3000  (API on http://localhost:8000)
+#
+# For a remote host, rebuild the frontend with your public API URL:
+#   NEXT_PUBLIC_API_BASE=https://api.example.com docker compose up --build
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # persist Lost & Found registry + generated sample clip across restarts
+      - backend_storage:/app/storage
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://localhost:8000}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  backend_storage:

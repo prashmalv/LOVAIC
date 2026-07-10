@@ -1,0 +1,30 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+npm-debug.log*
+*.tsbuildinfo
+next-env.d.ts
+
+# Local env
+.env.local
+.env*.local
+
+# Model weights (auto-downloaded at runtime) + training outputs
+*.pt
+runs/
+
+# Generated demo assets + runtime data
+backend/storage/*.mp4
+backend/storage/*.json
+
+# User-provided datasets (can be large); keep the example yaml
+backend/datasets/*/
+
+# OS
+.DS_Store

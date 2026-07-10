@@ -1,0 +1,22 @@
+# Example YOLO dataset config for a LOVAIC custom model (plastic-waste + PPE).
+# Copy this, point the paths at your downloaded/labelled data, then:
+#   ./venv/bin/python train_custom.py --data datasets/plastic_ppe.example.yaml
+#
+# Folder layout expected (YOLO format):
+#   datasets/plastic_ppe/
+#     images/train/*.jpg   labels/train/*.txt
+#     images/val/*.jpg     labels/val/*.txt
+# Each label .txt line:  <class_id> <x_center> <y_center> <width> <height>   (normalised 0-1)
+
+path: ./datasets/plastic_ppe      # dataset root (relative to backend/)
+train: images/train
+val: images/val
+
+# Keep class names aligned with the matchers in app/vision.py
+# (words like "plastic", "bottle", "waste", "helmet" are auto-recognised).
+names:
+  0: plastic_bottle
+  1: plastic_bag
+  2: waste_pile
+  3: helmet
+  4: no_helmet
