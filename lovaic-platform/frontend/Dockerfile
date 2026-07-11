@@ -3,7 +3,10 @@ FROM node:20-slim AS build
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+# npm install (not `npm ci`) so platform-specific native deps (Tailwind v4 oxide /
+# lightningcss) resolve for the Linux build host regardless of where the lockfile
+# was generated.
+RUN npm install --no-audit --no-fund
 
 COPY . .
 
