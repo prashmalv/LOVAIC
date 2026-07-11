@@ -28,7 +28,10 @@ ACR_NAME="${ACR_NAME:-rlailovaic}"          # must be globally unique, 5-50 alph
 ENV_NAME="${ENV_NAME:-rlai-lovaic-env}"
 APP_API="${APP_API:-rlai-lovaic-api}"
 APP_WEB="${APP_WEB:-rlai-lovaic-web}"
-TAG="${TAG:-latest}"
+# Tag images by git commit SHA so every deploy is a distinct image reference —
+# this guarantees Azure Container Apps rolls a NEW revision (a mutable ":latest"
+# tag leaves the running revision unchanged and silently serves stale code).
+TAG="${TAG:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && git rev-parse --short HEAD 2>/dev/null || echo latest)}"
 
 BUILD_FROM="${BUILD_FROM:-git}"             # git | local
 REPO="${REPO:-https://github.com/prashmalv/LOVAIC.git}"
