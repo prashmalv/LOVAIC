@@ -15,6 +15,7 @@ export interface Insight {
 
 export interface DetectResult {
   mode: string;
+  engine?: string;
   annotated_image: string;
   detections: Detection[];
   counts: Record<string, number>;
@@ -30,6 +31,8 @@ export function streamUrl(
     count?: boolean;
     line?: "horizontal" | "vertical";
     fid?: string;
+    seg?: boolean;
+    privacy?: boolean;
   } = {}
 ): string {
   const p = new URLSearchParams({ src, mode, conf: String(opts.conf ?? 0.35) });
@@ -37,6 +40,8 @@ export function streamUrl(
     p.set("count", "true");
     p.set("line", opts.line ?? "horizontal");
   }
+  if (opts.seg) p.set("seg", "true");
+  if (opts.privacy) p.set("privacy", "true");
   if (opts.fid) p.set("fid", opts.fid);
   // cache-buster so reconnecting with new options always restarts the stream
   p.set("t", String(Date.now()));
@@ -61,15 +66,23 @@ export async function streamStats(fids: string[]): Promise<StreamStats> {
   return res.json();
 }
 
+export interface DetectOpts {
+  conf?: number;
+  seg?: boolean;
+  privacy?: boolean;
+}
+
 export async function detect(
   file: File,
   mode: DetectMode,
-  conf = 0.35
+  opts: DetectOpts = {}
 ): Promise<DetectResult> {
   const fd = new FormData();
   fd.append("file", file);
   fd.append("mode", mode);
-  fd.append("conf", String(conf));
+  fd.append("conf", String(opts.conf ?? 0.35));
+  if (opts.seg) fd.append("seg", "true");
+  if (opts.privacy) fd.append("privacy", "true");
   const res = await fetch(`${API_BASE}/api/detect`, { method: "POST", body: fd });
   if (!res.ok) throw new Error(`Detection failed (${res.status})`);
   return res.json();

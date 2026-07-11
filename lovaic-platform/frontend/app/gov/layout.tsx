@@ -10,6 +10,7 @@ const NAV: NavItem[] = [
   { href: "/gov/lostfound", label: "Lost & Found", icon: "🔎", tag: "AI" },
   { href: "/gov/dustbin", label: "Smart Dustbins", icon: "🗑️" },
   { href: "/gov/schemes", label: "Scheme Discovery", icon: "📜" },
+  { href: "/gov/platform", label: "Why LOVAIC", icon: "◆", tag: "TECH" },
 ];
 
 export default function GovLayout({ children }: { children: React.ReactNode }) {

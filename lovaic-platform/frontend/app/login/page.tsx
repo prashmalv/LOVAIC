@@ -58,12 +58,8 @@ export default function LoginPage() {
       <div className="grid-lines absolute inset-0 h-[400px] -z-10" />
 
       <Link href="/" className="flex items-center gap-2 mb-8" style={{ textDecoration: "none" }}>
-        <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center font-extrabold text-white"
-          style={{ background: "linear-gradient(135deg, #23d0c5, #6c63ff)" }}
-        >
-          L
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/rlailogo.png" alt="RLAI" style={{ height: 40, borderRadius: 9 }} />
         <span className="font-extrabold text-xl">LOVAIC</span>
       </Link>
 

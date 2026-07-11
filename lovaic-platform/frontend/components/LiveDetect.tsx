@@ -27,6 +27,8 @@ export default function LiveDetect({
   const [error, setError] = useState<string | null>(null);
   const [source, setSource] = useState("cctv");
   const [view, setView] = useState<"snapshot" | "live">("snapshot");
+  const [seg, setSeg] = useState(true);
+  const [privacy, setPrivacy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const run = useCallback(
@@ -36,7 +38,7 @@ export default function LiveDetect({
       setPreview(URL.createObjectURL(file));
       setLoading(true);
       try {
-        const r = await detect(file, mode);
+        const r = await detect(file, mode, { seg, privacy });
         setResult(r);
       } catch (e) {
         setError(
@@ -46,7 +48,7 @@ export default function LiveDetect({
         setLoading(false);
       }
     },
-    [mode]
+    [mode, seg, privacy]
   );
 
   const onFile = (f?: File | null) => {
@@ -55,7 +57,7 @@ export default function LiveDetect({
 
   return (
     <div>
-      <div className="flex gap-2 mb-4">
+      <div className="flex gap-2 mb-4 flex-wrap items-center">
         {([
           { id: "snapshot", label: "🖼️ Snapshot" },
           { id: "live", label: "🔴 Live camera" },
@@ -75,9 +77,18 @@ export default function LiveDetect({
             {t.label}
           </button>
         ))}
+
+        <span style={{ width: 1, height: 20, background: "var(--border)", margin: "0 0.25rem" }} />
+
+        <Toggle on={seg} setOn={setSeg} accent={accent} label="◆ Pixel masks" title="Pixel-level instance segmentation — LOVAIC's edge over box-only detectors" />
+        <Toggle on={privacy} setOn={setPrivacy} accent="var(--green)" label="🛡 Privacy blur" title="On-frame redaction of people/faces — privacy by design" />
       </div>
 
-      {view === "live" ? <LiveCamera mode={mode} accent={accent} /> : SnapshotView()}
+      {view === "live" ? (
+        <LiveCamera mode={mode} accent={accent} seg={seg} privacy={privacy} />
+      ) : (
+        SnapshotView()
+      )}
     </div>
   );
 
@@ -159,11 +170,16 @@ export default function LiveDetect({
 
       {/* Output side */}
       <div className="card p-5">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3">
           <div className="text-sm font-semibold tracking-wide" style={{ color: "var(--text-dim)" }}>
-            LOVAIC VISION ENGINE · RLAI
+            {result?.engine ? result.engine.toUpperCase() : "LOVAIC RLAI ENGINE"}
           </div>
           {loading && <span className="pill" style={{ color: accent }}>Analyzing…</span>}
+        </div>
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          <span className="pill" style={{ fontSize: 10, color: accent, borderColor: accent }}>◆ {seg ? "Pixel-level" : "Object-level"}</span>
+          <span className="pill" style={{ fontSize: 10, color: privacy ? "var(--green)" : "var(--text-faint)", borderColor: privacy ? "var(--green)" : "var(--border)" }}>🛡 {privacy ? "Redacted" : "Privacy-ready"}</span>
+          <span className="pill" style={{ fontSize: 10, color: "var(--text-dim)" }}>🇮🇳 Sovereign · on-prem</span>
         </div>
 
         {error && (
@@ -251,4 +267,35 @@ export default function LiveDetect({
     </div>
     );
   }
+}
+
+function Toggle({
+  on,
+  setOn,
+  accent,
+  label,
+  title,
+}: {
+  on: boolean;
+  setOn: (v: boolean) => void;
+  accent: string;
+  label: string;
+  title?: string;
+}) {
+  return (
+    <button
+      onClick={() => setOn(!on)}
+      title={title}
+      className="pill"
+      style={{
+        cursor: "pointer",
+        padding: "0.45rem 0.85rem",
+        color: on ? "#fff" : "var(--text-dim)",
+        background: on ? accent : "transparent",
+        borderColor: on ? accent : "var(--border)",
+      }}
+    >
+      {label}
+    </button>
+  );
 }

@@ -37,6 +37,8 @@ _MODEL_FILES = {
     "coco": os.getenv("LOVAIC_MODEL_COCO", "yolov8n.pt"),
     # Open Images V7 gives real waste/PPE vocabulary (Plastic bag, Tin can, Helmet…)
     "oiv7": os.getenv("LOVAIC_MODEL_OIV7", "yolov8n-oiv7.pt"),
+    # Instance segmentation: pixel-level masks (not just boxes) — LOVAIC's edge.
+    "seg": os.getenv("LOVAIC_MODEL_SEG", "yolov8n-seg.pt"),
     "custom": os.getenv("LOVAIC_MODEL_CUSTOM", ""),
 }
 
@@ -275,9 +277,13 @@ def _encode_jpeg(bgr: np.ndarray) -> str:
     return "data:image/jpeg;base64," + base64.b64encode(buf).decode("ascii")
 
 
-def _run(rgb: np.ndarray, mode: str, conf: float):
-    """Core inference shared by snapshot detection and live streaming."""
-    model = get_model(MODE_MODEL.get(mode, "coco"))
+def _run(rgb: np.ndarray, mode: str, conf: float, model_key: str | None = None):
+    """Core inference shared by snapshot detection and live streaming.
+
+    `model_key` overrides the per-mode model — e.g. "seg" for the pixel-level
+    instance-segmentation engine.
+    """
+    model = get_model(model_key or MODE_MODEL.get(mode, "coco"))
     results = model.predict(rgb, conf=conf, verbose=False)
     r = results[0]
     names = r.names
@@ -296,15 +302,53 @@ def _run(rgb: np.ndarray, mode: str, conf: float):
     return r, detections, counts, interpret(mode, counts)
 
 
-def detect(raw: bytes, mode: str = "general", conf: float = 0.35) -> dict[str, Any]:
-    """Run detection and return annotated image + structured detections + insight."""
-    rgb = _read_image(raw)
-    r, detections, counts, insight = _run(rgb, mode, conf)
-    annotated = _encode_jpeg(r.plot())  # ultralytics returns BGR
+_PRIVACY_MATCH = ("person", "man", "woman", "boy", "girl", "face", "head", "people")
 
+
+def _apply_privacy(bgr: np.ndarray, r) -> np.ndarray:
+    """Privacy-by-design: blur every detected person/face region in-frame.
+
+    Uses pixel masks when the segmentation engine is active (precise redaction),
+    otherwise the detection box. Raw identities never leave the frame.
+    """
+    if r.boxes is None:
+        return bgr
+    names = r.names
+    masks = getattr(r, "masks", None)
+    mask_data = masks.data.cpu().numpy() if masks is not None else None
+    h, w = bgr.shape[:2]
+    for i, box in enumerate(r.boxes):
+        label = names[int(box.cls[0])].lower()
+        if not any(k in label for k in _PRIVACY_MATCH):
+            continue
+        if mask_data is not None and i < len(mask_data):
+            m = cv2.resize(mask_data[i], (w, h)) > 0.5
+            blurred = cv2.GaussianBlur(bgr, (0, 0), 14)
+            bgr[m] = blurred[m]
+        else:
+            x1, y1, x2, y2 = (max(0, int(v)) for v in box.xyxy[0].tolist())
+            roi = bgr[y1:y2, x1:x2]
+            if roi.size:
+                bgr[y1:y2, x1:x2] = cv2.GaussianBlur(roi, (0, 0), 14)
+    return bgr
+
+
+def detect(raw: bytes, mode: str = "general", conf: float = 0.35,
+           seg: bool = False, privacy: bool = False) -> dict[str, Any]:
+    """Run detection and return annotated image + structured detections + insight.
+
+    seg     → pixel-level instance segmentation (masks, not just boxes)
+    privacy → blur detected people/faces in the returned frame
+    """
+    rgb = _read_image(raw)
+    r, detections, counts, insight = _run(rgb, mode, conf, model_key="seg" if seg else None)
+    annotated = r.plot(boxes=not privacy)  # ultralytics returns BGR
+    if privacy:
+        annotated = _apply_privacy(annotated, r)
     return {
         "mode": mode,
-        "annotated_image": annotated,
+        "engine": "LOVAIC RLAI · pixel-segmentation" if seg else "LOVAIC RLAI",
+        "annotated_image": _encode_jpeg(annotated),
         "detections": detections,
         "counts": counts,
         "insight": {
@@ -343,16 +387,18 @@ def _overlay_banner(bgr: np.ndarray, insight: Insight, mode: str) -> None:
                 cv2.FONT_HERSHEY_SIMPLEX, scale * 0.7, color, 1, cv2.LINE_AA)
 
 
-def annotate_frame(frame_bgr: np.ndarray, mode: str = "general",
-                   conf: float = 0.35, max_w: int = 640) -> np.ndarray:
-    """Annotate a single BGR video frame (boxes + status banner) for MJPEG streaming."""
+def annotate_frame(frame_bgr: np.ndarray, mode: str = "general", conf: float = 0.35,
+                   max_w: int = 640, seg: bool = False, privacy: bool = False) -> np.ndarray:
+    """Annotate a single BGR video frame (boxes/masks + status banner) for streaming."""
     h, w = frame_bgr.shape[:2]
     if w > max_w:
         scale = max_w / w
         frame_bgr = cv2.resize(frame_bgr, (max_w, int(h * scale)))
     rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
-    r, _, _, insight = _run(rgb, mode, conf)
-    annotated = r.plot()  # BGR
+    r, _, _, insight = _run(rgb, mode, conf, model_key="seg" if seg else None)
+    annotated = r.plot(boxes=not privacy)  # BGR
+    if privacy:
+        annotated = _apply_privacy(annotated, r)
     _overlay_banner(annotated, insight, mode)
     return annotated
 
@@ -426,11 +472,11 @@ class LineCounter:
 
 def annotate_tracked(frame_bgr: np.ndarray, mode: str, counter: LineCounter,
                      tracker: SimpleTracker, conf: float = 0.35,
-                     max_w: int = 640) -> tuple[np.ndarray, dict[str, int]]:
+                     max_w: int = 640, privacy: bool = False) -> tuple[np.ndarray, dict[str, int]]:
     """Annotate a frame with boxes + crossing line + IN/OUT tally.
 
     Returns (annotated_bgr, class_counts). Uses the feed's own tracker so
-    counting is isolated per camera.
+    counting is isolated per camera. `privacy` blurs people while still counting.
     """
     h0, w0 = frame_bgr.shape[:2]
     if w0 > max_w:
@@ -445,7 +491,9 @@ def annotate_tracked(frame_bgr: np.ndarray, mode: str, counter: LineCounter,
             x1, y1, x2, y2 = box.xyxy[0].tolist()
             centroids.append(((x1 + x2) / 2, (y1 + y2) / 2))
 
-    annotated = r.plot()
+    annotated = r.plot(boxes=not privacy)
+    if privacy:
+        annotated = _apply_privacy(annotated, r)
     h, w = annotated.shape[:2]
     ids = tracker.assign(centroids, w, h)
     counter.update([(i, cx, cy) for i, (cx, cy) in zip(ids, centroids)], w, h)

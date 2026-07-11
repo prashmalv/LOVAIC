@@ -1,4 +1,5 @@
 import Link from "next/link";
+import WhyLovaic from "@/components/WhyLovaic";
 
 const CAPABILITIES = [
   { icon: "♻️", title: "Garbage & Plastic Detection", desc: "Spot litter and plastic on roads or water bodies; auto-suggest waste-management actions.", tag: "Gov" },
@@ -27,12 +28,8 @@ export default function Landing() {
 
       <nav className="flex items-center justify-between px-6 md:px-12 py-5 max-w-7xl mx-auto">
         <div className="flex items-center gap-2">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-white"
-            style={{ background: "linear-gradient(135deg, #23d0c5, #6c63ff)" }}
-          >
-            L
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/rlailogo.png" alt="RLAI" style={{ height: 34, borderRadius: 8 }} />
           <span className="font-extrabold text-lg">LOVAIC</span>
         </div>
         <Link href="/login" className="btn btn-primary">
@@ -89,12 +86,16 @@ export default function Landing() {
         />
       </section>
 
+      <section id="why" className="max-w-6xl mx-auto px-6 pb-24">
+        <WhyLovaic accent="#8b83ff" />
+      </section>
+
       <section id="capabilities" className="max-w-7xl mx-auto px-6 pb-24">
         <div className="text-center mb-10">
           <div className="text-xs font-semibold tracking-widest uppercase" style={{ color: "var(--brand-2)" }}>
             Capability grid
           </div>
-          <h2 className="text-3xl font-bold mt-1">LOVAIC — one engine, every task</h2>
+          <h2 className="text-3xl font-bold mt-1">LOVAIC - one engine, every task</h2>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {CAPABILITIES.map((c) => (

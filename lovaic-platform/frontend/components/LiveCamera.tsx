@@ -11,9 +11,13 @@ type Sub = "webcam" | "stream";
 export default function LiveCamera({
   mode,
   accent = "#6c63ff",
+  seg = false,
+  privacy = false,
 }: {
   mode: DetectMode;
   accent?: string;
+  seg?: boolean;
+  privacy?: boolean;
 }) {
   const [sub, setSub] = useState<Sub>("webcam");
   return (
@@ -36,7 +40,11 @@ export default function LiveCamera({
           </button>
         ))}
       </div>
-      {sub === "webcam" ? <Webcam mode={mode} accent={accent} /> : <RemoteStream mode={mode} accent={accent} />}
+      {sub === "webcam" ? (
+        <Webcam mode={mode} accent={accent} seg={seg} privacy={privacy} />
+      ) : (
+        <RemoteStream mode={mode} accent={accent} seg={seg} privacy={privacy} />
+      )}
     </div>
   );
 }
@@ -54,7 +62,7 @@ interface Box {
 const DETECT_INTERVAL = 300; // ms between engine calls (throttle → light on CPU)
 const LERP = 0.35; // box glide factor per animation frame
 
-function Webcam({ mode, accent }: { mode: DetectMode; accent: string }) {
+function Webcam({ mode, accent, seg, privacy }: { mode: DetectMode; accent: string; seg: boolean; privacy: boolean }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const overlayRef = useRef<HTMLCanvasElement>(null);
@@ -153,7 +161,7 @@ function Webcam({ mode, accent }: { mode: DetectMode; accent: string }) {
       try {
         const f = await capture();
         if (f) {
-          const r = await detect(f, mode);
+          const r = await detect(f, mode, { seg, privacy });
           setResult(r);
           targetRef.current = r.detections.map((d) => ({
             label: d.label,
@@ -177,7 +185,7 @@ function Webcam({ mode, accent }: { mode: DetectMode; accent: string }) {
       const elapsed = performance.now() - t0;
       setTimeout(tick, Math.max(0, DETECT_INTERVAL - elapsed));
     }
-  }, [mode, capture]);
+  }, [mode, capture, seg, privacy]);
 
   const start = useCallback(async () => {
     setError(null);
@@ -265,7 +273,7 @@ function Webcam({ mode, accent }: { mode: DetectMode; accent: string }) {
 }
 
 /* --------------------------- REMOTE STREAM --------------------------- */
-function RemoteStream({ mode, accent }: { mode: DetectMode; accent: string }) {
+function RemoteStream({ mode, accent, seg, privacy }: { mode: DetectMode; accent: string; seg: boolean; privacy: boolean }) {
   const [url, setUrl] = useState("");
   const [active, setActive] = useState<string | null>(null);
   const [count, setCount] = useState(false);
@@ -277,7 +285,7 @@ function RemoteStream({ mode, accent }: { mode: DetectMode; accent: string }) {
     { label: "HLS example", value: "https://<host>/live/stream.m3u8" },
   ];
 
-  const opts = { count, line };
+  const opts = { count, line, seg, privacy };
 
   return (
     <div className="grid lg:grid-cols-2 gap-5">

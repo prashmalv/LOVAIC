@@ -41,12 +41,8 @@ export default function Shell({
         style={{ borderRight: "1px solid var(--border-soft)", background: "var(--bg-2)" }}
       >
         <Link href="/" className="flex items-center gap-2 mb-1" style={{ textDecoration: "none" }}>
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center font-extrabold"
-            style={{ background: `linear-gradient(135deg, ${accent}, var(--brand))`, color: "#fff" }}
-          >
-            L
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/rlailogo.png" alt="RLAI" style={{ height: 32, borderRadius: 7 }} />
           <div>
             <div className="font-extrabold leading-none" style={{ color: "var(--text)" }}>
               LOVAIC

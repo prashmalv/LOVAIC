@@ -51,12 +51,17 @@ async def detect(
     file: UploadFile = File(...),
     mode: str = Form("general"),
     conf: float = Form(0.35),
+    seg: bool = Form(False),
+    privacy: bool = Form(False),
 ):
-    """Run real Vision detection and interpret it for the given vertical."""
+    """Run real Vision detection and interpret it for the given vertical.
+
+    seg=true → pixel-level instance segmentation; privacy=true → blur people.
+    """
     if mode not in VALID_MODES:
         mode = "general"
     raw = await file.read()
-    return vision.detect(raw, mode=mode, conf=conf)
+    return vision.detect(raw, mode=mode, conf=conf, seg=seg, privacy=privacy)
 
 
 # --- Live camera / video stream (RTSP · HLS · HTTP-MJPEG · file · webcam) ---
@@ -77,7 +82,8 @@ def _error_frame(text: str) -> bytes:
 STREAM_STATS: dict[str, dict] = {}
 
 
-def _mjpeg(src: str, mode: str, conf: float, count: bool, line: str, fid: str | None):
+def _mjpeg(src: str, mode: str, conf: float, count: bool, line: str,
+          fid: str | None, seg: bool, privacy: bool):
     """Generator yielding annotated MJPEG frames from any OpenCV-readable source."""
     boundary = b"--frame\r\nContent-Type: image/jpeg\r\n\r\n"
     cap = cv2.VideoCapture(int(src) if src.isdigit() else src)
@@ -101,7 +107,8 @@ def _mjpeg(src: str, mode: str, conf: float, count: bool, line: str, fid: str | 
                     continue
             fails = 0
             if counter is not None and tracker is not None:
-                annotated, counts = vision.annotate_tracked(frame, mode, counter, tracker, conf=conf)
+                annotated, counts = vision.annotate_tracked(frame, mode, counter, tracker,
+                                                             conf=conf, privacy=privacy)
                 if fid:
                     STREAM_STATS[fid] = {
                         "mode": mode,
@@ -111,7 +118,8 @@ def _mjpeg(src: str, mode: str, conf: float, count: bool, line: str, fid: str | 
                         "counts": counts,
                     }
             else:
-                annotated = vision.annotate_frame(frame, mode=mode, conf=conf)
+                annotated = vision.annotate_frame(frame, mode=mode, conf=conf,
+                                                  seg=seg, privacy=privacy)
             ok2, buf = cv2.imencode(".jpg", annotated, [cv2.IMWRITE_JPEG_QUALITY, 70])
             if not ok2:
                 continue
@@ -124,7 +132,8 @@ def _mjpeg(src: str, mode: str, conf: float, count: bool, line: str, fid: str | 
 
 @app.get("/api/stream")
 def stream(src: str, mode: str = "general", conf: float = 0.35,
-           count: bool = False, line: str = "horizontal", fid: str | None = None):
+           count: bool = False, line: str = "horizontal", fid: str | None = None,
+           seg: bool = False, privacy: bool = False):
     """Pull a live stream (or looping video/webcam) and return annotated MJPEG.
 
     `src` may be an RTSP/HLS/HTTP video URL, a local file path, or a webcam
@@ -142,7 +151,7 @@ def stream(src: str, mode: str = "general", conf: float = 0.35,
     if line not in ("horizontal", "vertical"):
         line = "horizontal"
     return StreamingResponse(
-        _mjpeg(src, mode, conf, count, line, fid),
+        _mjpeg(src, mode, conf, count, line, fid, seg, privacy),
         media_type="multipart/x-mixed-replace; boundary=frame",
     )
 

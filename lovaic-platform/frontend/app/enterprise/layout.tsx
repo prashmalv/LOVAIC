@@ -6,6 +6,7 @@ const NAV: NavItem[] = [
   { href: "/enterprise/retail", label: "Retail Intelligence", icon: "🛒", tag: "LIVE" },
   { href: "/enterprise/bfsi", label: "BFSI Monitoring", icon: "🏦" },
   { href: "/enterprise/manufacturing", label: "Manufacturing", icon: "🏭" },
+  { href: "/enterprise/platform", label: "Why LOVAIC", icon: "◆", tag: "TECH" },
 ];
 
 export default function EnterpriseLayout({ children }: { children: React.ReactNode }) {
