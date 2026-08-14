@@ -1,0 +1,117 @@
+========================================================
+   LOVAIC VISION AI  —  CAMERA ONBOARDING FORM
+   (RLAI · rightleft.ai)
+========================================================
+
+Hello! To connect your CCTV cameras to LOVAIC for live video
+analytics, please share the details below. Fill in whatever
+you know — we'll help with the rest on a quick call.
+
+You can reply right here on WhatsApp, or fill this and send
+it back. Anything you're unsure about, just write "not sure".
+
+--------------------------------------------------------
+SECTION A — ABOUT YOUR SITE
+--------------------------------------------------------
+1. Company / Site name        : ______________________
+2. Site address / location    : ______________________
+3. Total number of cameras     : ______ (approx 24?)
+4. Do all cameras connect to a single NVR / DVR / VMS?
+      Yes / No  ->  if Yes, brand & model : ____________
+      (e.g. Hikvision, CP Plus, Dahua, Milestone)
+5. Are cameras currently recording?  Yes / No
+
+--------------------------------------------------------
+SECTION B — CAMERA & FEED DETAILS
+--------------------------------------------------------
+6. Camera brand(s) & model(s)  : ______________________
+7. Typical resolution & FPS    : ______ (e.g. 1080p @ 25fps)
+8. Is a lower-res "sub-stream" available? Yes / No / Not sure
+9. Login username & password for cameras / NVR:
+      (share securely — not mandatory in this message)
+      Username : __________   Password : __________
+10. Do you already have RTSP links for any camera?
+      Yes / No  ->  if Yes, please paste one sample:
+      rtsp://__________________________________________
+
+--------------------------------------------------------
+SECTION C — NETWORK & ACCESS
+--------------------------------------------------------
+11. Are all cameras on the same local network (LAN)? Yes / No
+12. How should our analytics connect?
+      [ ] Our server sits ON your premise (local network)
+      [ ] Remote access via VPN / static IP / port-forward
+      [ ] Not sure — please advise
+13. Internet bandwidth at site (approx) : __________ Mbps
+
+--------------------------------------------------------
+SECTION D — WHAT SHOULD EACH CAMERA DETECT
+--------------------------------------------------------
+Tick all that apply for your site (we map per-camera later):
+   [ ] People counting / footfall (IN–OUT)
+   [ ] Crowd density / overcrowding & safety alerts
+   [ ] Vehicle counting / traffic
+   [ ] Queue length & waiting time
+   [ ] PPE / helmet / safety-gear compliance
+   [ ] Garbage / cleanliness monitoring
+   [ ] Retail: dwell time, staff attention, shelf
+   [ ] Intrusion / restricted-zone alert
+   [ ] Other: ____________________________________
+
+14. Which 2–3 cameras are MOST important to start with?
+    (we suggest a small pilot first)
+    ____________________________________________________
+
+--------------------------------------------------------
+SECTION E — DEPLOYMENT PREFERENCE
+--------------------------------------------------------
+15. Where should the system run?
+      [ ] On-premise (data never leaves your site)
+      [ ] Cloud
+      [ ] No preference
+16. Do you have a spare server / GPU machine on site?
+      Yes / No  ->  if Yes, specs : ____________________
+17. Monitoring hours:  [ ] 24x7   [ ] Business hours only
+
+--------------------------------------------------------
+SECTION F — PRIVACY & OUTPUT
+--------------------------------------------------------
+18. Should faces / people be auto-blurred for privacy? Yes / No
+19. How long should we keep clips / reports? ______ days
+20. Where do you want the results?
+      [ ] LOVAIC dashboard   [ ] Daily report (Excel/PDF)
+      [ ] WhatsApp / SMS alerts   [ ] Push to your own system (API)
+
+--------------------------------------------------------
+SECTION G — PER-CAMERA LIST  (copy this block for each camera)
+--------------------------------------------------------
+Camera #      : ____
+Location/Name : ____________________ (e.g. Main Gate)
+Fixed or PTZ  : Fixed / PTZ (moving)
+What to detect: ____________________________________
+Counting line?: No / Horizontal / Vertical
+Alert needed? : ____________________________________
+
+(...repeat the above for all ~24 cameras...)
+
+--------------------------------------------------------
+PLEASE ALSO ATTACH
+--------------------------------------------------------
+- 1 sample photo/screenshot from 2–3 key cameras
+  (so we can confirm accuracy before full rollout)
+
+--------------------------------------------------------
+NOTE FROM US
+--------------------------------------------------------
+- For ~24 cameras we usually start with a 3–4 camera pilot,
+  then scale — faster and lower cost to prove value.
+- If all cameras are on one NVR, we can often pull every feed
+  from that single device.
+- Credentials/passwords: please share over a secure channel,
+  not in an open group.
+
+Thank you! Once we have this, we'll confirm the setup plan,
+compute sizing, and pilot timeline.
+
+—  LOVAIC Vision AI  |  RLAI (rightleft.ai)
+========================================================

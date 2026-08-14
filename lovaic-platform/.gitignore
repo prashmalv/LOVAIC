@@ -23,6 +23,9 @@ runs/
 backend/storage/*.mp4
 backend/storage/*.json
 
+# On-site NVR feed list — contains live camera credentials, never commit
+backend/feeds.txt
+
 # User-provided datasets (can be large); keep the example yaml
 backend/datasets/*/
 
