@@ -98,16 +98,23 @@ def _resolve_source(src: str) -> str:
         try:
             # Call yt-dlp via the current interpreter so it works whether it's
             # installed in a venv (dev) or system site-packages (container).
-            out = subprocess.run(
-                [sys.executable, "-m", "yt_dlp", "--no-warnings", "-f",
-                 "230/232/best[height<=480]/best", "-g", src],
-                capture_output=True, text=True, timeout=45,
-            )
+            # Alternate player clients help dodge YouTube's datacenter-IP bot
+            # check; optional cookies file (mounted/env) helps further.
+            cmd = [sys.executable, "-m", "yt_dlp", "--no-warnings",
+                   "--extractor-args",
+                   "youtube:player_client=default,ios,android,web_safari",
+                   "-f", "230/232/best[height<=480]/best", "-g", src]
+            cookies = os.getenv("YT_COOKIES")
+            if cookies and os.path.exists(cookies):
+                cmd[3:3] = ["--cookies", cookies]
+            out = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
             for line in out.stdout.strip().splitlines():
                 if line.startswith("http"):
                     return line
-        except Exception:
-            pass
+            print(f"[resolve] yt-dlp could not resolve {src}: "
+                  f"{(out.stderr or '').strip()[:400]}", flush=True)
+        except Exception as e:
+            print(f"[resolve] yt-dlp error: {e}", flush=True)
     return src
 
 
