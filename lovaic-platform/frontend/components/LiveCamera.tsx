@@ -280,6 +280,7 @@ function RemoteStream({ mode, accent, seg, privacy }: { mode: DetectMode; accent
   const [line, setLine] = useState<"horizontal" | "vertical">("horizontal");
 
   const samples = [
+    { label: "YouTube live (temple)", value: "https://www.youtube.com/watch?v=GjGBxoQrP3k" },
     { label: "Server webcam", value: "0" },
     { label: "RTSP example", value: "rtsp://<camera-ip>:554/stream" },
     { label: "HLS example", value: "https://<host>/live/stream.m3u8" },
@@ -306,7 +307,7 @@ function RemoteStream({ mode, accent, seg, privacy }: { mode: DetectMode; accent
         <input
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="rtsp:// · https://….m3u8 · http://….mjpg · /path/video.mp4 · 0"
+          placeholder="youtube.com/watch?v=… · rtsp:// · https://….m3u8 · http://….mjpg · 0"
           className="w-full px-3 py-2.5 rounded-xl outline-none"
           style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)" }}
         />
