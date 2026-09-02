@@ -117,10 +117,10 @@ def _resolve_source(src: str) -> str:
             # Alternate player clients help dodge YouTube's datacenter-IP bot
             # check; optional cookies file (mounted/env) helps further.
             cmd = [sys.executable, "-m", "yt_dlp", "--no-warnings",
-                   # web_safari/tv can return "page needs to be reloaded" (UNPLAYABLE);
-                   # web_embedded + android are reliable with cookies.
+                   # web clients pass the datacenter bot-check WITH cookies; Deno
+                   # (installed in the image) solves the nsig/player JS challenge.
                    "--extractor-args",
-                   "youtube:player_client=default,android,web_embedded",
+                   "youtube:player_client=default,web_safari,web",
                    # robust: best video <=480p (any codec/format id), then fallbacks
                    "-f", "bv*[height<=480]/b[height<=480]/b", "-g", src]
             cookies = os.getenv("YT_COOKIES")
