@@ -126,6 +126,11 @@ def _resolve_source(src: str) -> str:
             cookies = os.getenv("YT_COOKIES")
             if cookies and os.path.exists(cookies):
                 cmd[3:3] = ["--cookies", cookies]
+            proxy = os.getenv("YT_PROXY")
+            if proxy:
+                # Route extraction through a residential/ISP proxy so YouTube
+                # sees a non-datacenter IP (defeats the cloud bot-check).
+                cmd[3:3] = ["--proxy", proxy]
             out = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
             for line in out.stdout.strip().splitlines():
                 if line.startswith("http"):
@@ -153,8 +158,14 @@ def _ffmpeg_proc(url: str) -> subprocess.Popen:
     cmd += ["-rw_timeout", "20000000", "-i", url,
             "-an", "-f", "rawvideo", "-pix_fmt", "bgr24",
             "-vf", f"scale={FF_W}:{FF_H}", "-"]
+    env = os.environ.copy()
+    # googlevideo segments are IP-locked to whoever resolved them, so when a
+    # proxy is used for YouTube extraction, fetch the media through it too.
+    proxy = os.getenv("YT_PROXY")
+    if proxy and ("googlevideo" in url or "youtube" in url):
+        env["http_proxy"] = env["https_proxy"] = proxy
     return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-                            bufsize=FF_W * FF_H * 3 * 4)
+                            bufsize=FF_W * FF_H * 3 * 4, env=env)
 
 
 def _mjpeg(src: str, mode: str, conf: float, count: bool, line: str,
