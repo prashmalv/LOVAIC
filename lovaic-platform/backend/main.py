@@ -45,6 +45,21 @@ def _startup():
 
     make_sample.ensure()
 
+    # YouTube cookies (base64) → write to a file so yt-dlp can auth past the
+    # datacenter bot-check. Provided via the YT_COOKIES_B64 secret on the host.
+    b64 = os.getenv("YT_COOKIES_B64")
+    if b64:
+        try:
+            import base64
+
+            path = "/tmp/yt_cookies.txt"
+            with open(path, "wb") as f:
+                f.write(base64.b64decode(b64))
+            os.environ["YT_COOKIES"] = path
+            print("[startup] YouTube cookies loaded", flush=True)
+        except Exception as e:  # noqa: BLE001
+            print(f"[startup] cookies load failed: {e}", flush=True)
+
 
 @app.get("/health")
 def health():
