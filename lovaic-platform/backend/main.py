@@ -15,6 +15,7 @@ import threading
 import time
 
 import cv2
+import numpy as np
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
@@ -103,7 +104,8 @@ def _resolve_source(src: str) -> str:
             cmd = [sys.executable, "-m", "yt_dlp", "--no-warnings",
                    "--extractor-args",
                    "youtube:player_client=default,ios,android,web_safari",
-                   "-f", "230/232/best[height<=480]/best", "-g", src]
+                   # robust: best video <=480p (any codec/format id), then fallbacks
+                   "-f", "bv*[height<=480]/b[height<=480]/b", "-g", src]
             cookies = os.getenv("YT_COOKIES")
             if cookies and os.path.exists(cookies):
                 cmd[3:3] = ["--cookies", cookies]
@@ -118,16 +120,35 @@ def _resolve_source(src: str) -> str:
     return src
 
 
+FF_W, FF_H = 640, 360  # fixed decode size for the ffmpeg pipe
+
+
+def _ffmpeg_proc(url: str) -> subprocess.Popen:
+    """Decode any network stream to raw BGR frames using SYSTEM ffmpeg.
+
+    OpenCV's bundled ffmpeg in the headless wheel can't open remote HTTPS/HLS
+    on the server; the system ffmpeg (TLS-enabled) can — so remote sources go
+    through this pipe instead of cv2.VideoCapture.
+    """
+    cmd = ["ffmpeg", "-hide_banner", "-loglevel", "error"]
+    if url.startswith("rtsp"):
+        cmd += ["-rtsp_transport", "tcp"]
+    cmd += ["-rw_timeout", "20000000", "-i", url,
+            "-an", "-f", "rawvideo", "-pix_fmt", "bgr24",
+            "-vf", f"scale={FF_W}:{FF_H}", "-"]
+    return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                            bufsize=FF_W * FF_H * 3 * 4)
+
+
 def _mjpeg(src: str, mode: str, conf: float, count: bool, line: str,
           fid: str | None, seg: bool, privacy: bool):
-    """Generator yielding annotated MJPEG frames from any OpenCV-readable source."""
+    """Generator yielding annotated MJPEG frames from any source (file/webcam/URL)."""
     boundary = b"--frame\r\nContent-Type: image/jpeg\r\n\r\n"
     resolved = _resolve_source(src)
+    is_webcam = resolved.isdigit()
     is_file = os.path.exists(resolved)
-    cap = cv2.VideoCapture(int(resolved) if resolved.isdigit() else resolved)
-    if not cap.isOpened():
-        yield boundary + _error_frame(f"Could not open: {src}") + b"\r\n"
-        return
+    is_remote = not is_webcam and not is_file
+
     counter = vision.LineCounter(line) if count else None
     tracker = vision.SimpleTracker() if count else None
 
@@ -147,6 +168,57 @@ def _mjpeg(src: str, mode: str, conf: float, count: bool, line: str,
         return (boundary + buf.tobytes() + b"\r\n") if ok2 else None
 
     state = {"frame": None, "stop": False}
+
+    # --- Remote URL (RTSP/HLS/HTTP, incl. resolved YouTube): system ffmpeg pipe ---
+    if is_remote:
+        proc = _ffmpeg_proc(resolved)
+        fbytes = FF_W * FF_H * 3
+
+        def reader():
+            while not state["stop"]:
+                raw = proc.stdout.read(fbytes)
+                if not raw or len(raw) < fbytes:
+                    break  # EOF / stream error
+                state["frame"] = np.frombuffer(raw, np.uint8).reshape(FF_H, FF_W, 3).copy()
+
+        th = threading.Thread(target=reader, daemon=True)
+        th.start()
+        got_any = False
+        waited = 0
+        try:
+            while True:
+                f = state["frame"]
+                if f is None:
+                    if not th.is_alive():
+                        break
+                    waited += 1
+                    if waited > 500:  # ~25s with no frame → give up
+                        break
+                    time.sleep(0.05)
+                    continue
+                got_any = True
+                waited = 0
+                state["frame"] = None
+                chunk = render(f)
+                if chunk:
+                    yield chunk
+            if not got_any:
+                yield boundary + _error_frame(f"Could not open: {src}") + b"\r\n"
+        finally:
+            state["stop"] = True
+            try:
+                proc.kill()
+            except Exception:
+                pass
+            if fid:
+                STREAM_STATS.pop(fid, None)
+        return
+
+    # --- Local file / webcam: OpenCV (works fine for these) ---
+    cap = cv2.VideoCapture(int(resolved) if is_webcam else resolved)
+    if not cap.isOpened():
+        yield boundary + _error_frame(f"Could not open: {src}") + b"\r\n"
+        return
     try:
         if is_file:
             # Local clip: play every frame in order, loop at the end.
@@ -167,9 +239,7 @@ def _mjpeg(src: str, mode: str, conf: float, count: bool, line: str,
                 if chunk:
                     yield chunk
         else:
-            # Live feed: a reader thread drains the stream at full speed while we
-            # process only the LATEST frame — so slow inference can't desync the
-            # live buffer (it just drops the frames in between, staying real-time).
+            # Webcam: reader thread keeps the latest frame; process at our pace.
             def reader():
                 miss = 0
                 while not state["stop"]:
@@ -182,7 +252,6 @@ def _mjpeg(src: str, mode: str, conf: float, count: bool, line: str,
                         continue
                     miss = 0
                     state["frame"] = f
-                    # We only process a few fps — don't burn CPU decoding 60fps.
                     time.sleep(0.08)
             th = threading.Thread(target=reader, daemon=True)
             th.start()
@@ -193,7 +262,7 @@ def _mjpeg(src: str, mode: str, conf: float, count: bool, line: str,
                     if not th.is_alive():
                         break
                     waited += 1
-                    if waited > 400:  # ~20s with no frame at all
+                    if waited > 400:
                         break
                     time.sleep(0.05)
                     continue
