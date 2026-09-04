@@ -470,13 +470,27 @@ class LineCounter:
             self._side[tid] = side
 
 
+def person_count(counts: dict[str, int]) -> int:
+    return _match_count(counts, PERSON_MATCH)
+
+
+def stampede_metrics(persons: int) -> dict[str, Any]:
+    """Crowd-density → stampede-risk proxy (0-100). Honest heuristic on person
+    count in the frame; not a validated predictor, but a useful density signal."""
+    score = min(100, round(persons / 40 * 100))
+    level = ("critical" if score >= 75 else "high" if score >= 50
+             else "moderate" if score >= 25 else "low")
+    return {"persons": persons, "risk_score": score, "risk_level": level}
+
+
 def annotate_tracked(frame_bgr: np.ndarray, mode: str, counter: LineCounter,
                      tracker: SimpleTracker, conf: float = 0.35,
-                     max_w: int = 640, privacy: bool = False) -> tuple[np.ndarray, dict[str, int]]:
+                     max_w: int = 640, privacy: bool = False
+                     ) -> tuple[np.ndarray, dict[str, int], list[tuple[float, float]]]:
     """Annotate a frame with boxes + crossing line + IN/OUT tally.
 
-    Returns (annotated_bgr, class_counts). Uses the feed's own tracker so
-    counting is isolated per camera. `privacy` blurs people while still counting.
+    Returns (annotated_bgr, class_counts, normalized_centroids). Uses the feed's
+    own tracker so counting is isolated per camera. `privacy` blurs people.
     """
     h0, w0 = frame_bgr.shape[:2]
     if w0 > max_w:
@@ -510,4 +524,17 @@ def annotate_tracked(frame_bgr: np.ndarray, mode: str, counter: LineCounter,
     cv2.rectangle(annotated, (8, h - th - 18), (8 + tw + 16, h - 6), (18, 12, 12), -1)
     cv2.putText(annotated, label, (16, h - 14), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
                 (34, 224, 161), 2, cv2.LINE_AA)
-    return annotated, counts
+
+    # stampede-risk chip (bottom-right)
+    sm = stampede_metrics(person_count(counts))
+    rc = {"low": (161, 224, 34), "moderate": (71, 179, 255),
+          "high": (76, 138, 255), "critical": (114, 92, 255)}[sm["risk_level"]]
+    rlabel = f"CROWD {sm['persons']} - RISK {sm['risk_score']}"
+    (rw, rh), _ = cv2.getTextSize(rlabel, cv2.FONT_HERSHEY_SIMPLEX, 0.55, 2)
+    cv2.rectangle(annotated, (w - rw - 18, h - rh - 18), (w - 4, h - 6), (18, 12, 12), -1)
+    cv2.putText(annotated, rlabel, (w - rw - 12, h - 14), cv2.FONT_HERSHEY_SIMPLEX,
+                0.55, rc, 2, cv2.LINE_AA)
+
+    # normalized centroids for the heatmap accumulator
+    cents = [(cx / w, cy / h) for cx, cy in centroids]
+    return annotated, counts, cents

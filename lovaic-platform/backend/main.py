@@ -101,6 +101,10 @@ def _error_frame(text: str) -> bytes:
 # Live per-feed stats for the multi-camera wall (fid -> latest snapshot).
 STREAM_STATS: dict[str, dict] = {}
 
+# Cumulative crowd heatmap grids per feed (fid -> HxW float accumulator).
+HEATMAP: dict[str, "np.ndarray"] = {}
+H_ROWS, H_COLS = 36, 64
+
 
 def _resolve_source(src: str) -> str:
     """Resolve web page URLs (YouTube live, etc.) to a direct video stream URL.
@@ -182,13 +186,20 @@ def _mjpeg(src: str, mode: str, conf: float, count: bool, line: str,
 
     def render(frame):
         if counter is not None and tracker is not None:
-            annotated, counts = vision.annotate_tracked(frame, mode, counter, tracker,
-                                                         conf=conf, privacy=privacy)
+            annotated, counts, cents = vision.annotate_tracked(frame, mode, counter, tracker,
+                                                               conf=conf, privacy=privacy)
             if fid:
+                sm = vision.stampede_metrics(vision.person_count(counts))
                 STREAM_STATS[fid] = {
                     "mode": mode, "in": counter.in_count, "out": counter.out_count,
                     "net": counter.in_count - counter.out_count, "counts": counts,
+                    "persons": sm["persons"], "risk_score": sm["risk_score"],
+                    "risk_level": sm["risk_level"],
                 }
+                # accumulate crowd heatmap (cumulative dwell grid)
+                grid = HEATMAP.setdefault(fid, np.zeros((H_ROWS, H_COLS), dtype="float32"))
+                for cx, cy in cents:
+                    grid[min(H_ROWS - 1, int(cy * H_ROWS)), min(H_COLS - 1, int(cx * H_COLS))] += 1
         else:
             annotated = vision.annotate_frame(frame, mode=mode, conf=conf,
                                               seg=seg, privacy=privacy)
@@ -337,20 +348,48 @@ def stream_stats(fids: str = ""):
     """Return live per-feed + combined counts for the given comma-separated fids."""
     wanted = [f for f in fids.split(",") if f]
     feeds = {f: STREAM_STATS.get(f) for f in wanted}
-    total_in = total_out = 0
+    total_in = total_out = total_persons = max_risk = 0
     objects: dict[str, int] = {}
     for snap in feeds.values():
         if not snap:
             continue
         total_in += snap.get("in", 0)
         total_out += snap.get("out", 0)
+        total_persons += snap.get("persons", 0)
+        max_risk = max(max_risk, snap.get("risk_score", 0))
         for k, v in snap.get("counts", {}).items():
             objects[k] = objects.get(k, 0) + v
     return {
         "feeds": feeds,
-        "combined": {"in": total_in, "out": total_out,
-                     "net": total_in - total_out, "objects": objects},
+        "combined": {"in": total_in, "out": total_out, "net": total_in - total_out,
+                     "persons": total_persons, "max_risk": max_risk, "objects": objects},
     }
+
+
+@app.post("/api/heatmap/reset")
+def heatmap_reset(fids: str = ""):
+    """Zero the heatmap accumulators for the given feeds (call at record start)."""
+    for f in fids.split(","):
+        HEATMAP.pop(f, None)
+    return {"reset": [f for f in fids.split(",") if f]}
+
+
+@app.get("/api/heatmap")
+def heatmap(fid: str):
+    """Render a feed's cumulative crowd heatmap as a colored PNG."""
+    import numpy as np
+    from fastapi.responses import Response
+
+    grid = HEATMAP.get(fid)
+    if grid is None or grid.max() <= 0:
+        img = np.zeros((H_ROWS * 12, H_COLS * 12, 3), dtype="uint8")
+    else:
+        norm = (grid / grid.max() * 255).astype("uint8")
+        norm = cv2.GaussianBlur(norm, (0, 0), 0.8)
+        big = cv2.resize(norm, (H_COLS * 12, H_ROWS * 12), interpolation=cv2.INTER_CUBIC)
+        img = cv2.applyColorMap(big, cv2.COLORMAP_JET)
+    ok, buf = cv2.imencode(".png", img)
+    return Response(content=buf.tobytes(), media_type="image/png")
 
 
 # --- Lost & Found citizen portal -------------------------------------------

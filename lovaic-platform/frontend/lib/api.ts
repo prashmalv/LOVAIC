@@ -54,16 +54,38 @@ export interface FeedStat {
   out: number;
   net: number;
   counts: Record<string, number>;
+  persons?: number;
+  risk_score?: number;
+  risk_level?: string;
 }
 export interface StreamStats {
   feeds: Record<string, FeedStat | null>;
-  combined: { in: number; out: number; net: number; objects: Record<string, number> };
+  combined: {
+    in: number;
+    out: number;
+    net: number;
+    persons?: number;
+    max_risk?: number;
+    objects: Record<string, number>;
+  };
 }
 
 export async function streamStats(fids: string[]): Promise<StreamStats> {
   const res = await fetch(`${API_BASE}/api/stream-stats?fids=${fids.join(",")}`);
   if (!res.ok) throw new Error("stats failed");
   return res.json();
+}
+
+export function heatmapUrl(fid: string): string {
+  return `${API_BASE}/api/heatmap?fid=${encodeURIComponent(fid)}&t=${Date.now()}`;
+}
+
+export async function resetHeatmaps(fids: string[]): Promise<void> {
+  try {
+    await fetch(`${API_BASE}/api/heatmap/reset?fids=${fids.join(",")}`, { method: "POST" });
+  } catch {
+    /* non-fatal */
+  }
 }
 
 export interface DetectOpts {
