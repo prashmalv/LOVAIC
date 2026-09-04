@@ -33,6 +33,7 @@ export function streamUrl(
     fid?: string;
     seg?: boolean;
     privacy?: boolean;
+    classes?: string;
   } = {}
 ): string {
   const p = new URLSearchParams({ src, mode, conf: String(opts.conf ?? 0.35) });
@@ -42,6 +43,7 @@ export function streamUrl(
   }
   if (opts.seg) p.set("seg", "true");
   if (opts.privacy) p.set("privacy", "true");
+  if (opts.classes && opts.classes.trim()) p.set("classes", opts.classes.trim());
   if (opts.fid) p.set("fid", opts.fid);
   // cache-buster so reconnecting with new options always restarts the stream
   p.set("t", String(Date.now()));

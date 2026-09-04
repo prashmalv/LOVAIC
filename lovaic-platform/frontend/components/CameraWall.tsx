@@ -30,13 +30,20 @@ interface Feed {
   src: string;
   mode: DetectMode;
   count: boolean;
+  line: "horizontal" | "vertical";
+  classes: string;
   url: string; // computed once so re-renders never restart the stream
 }
 
 const MODES: DetectMode[] = ["traffic", "safety", "queue", "retail", "garbage", "ppe", "general"];
+type Line = "horizontal" | "vertical";
 
-function makeFeed(fid: string, name: string, src: string, mode: DetectMode, count: boolean): Feed {
-  return { fid, name, src, mode, count, url: streamUrl(src, mode, { count, fid }) };
+function makeFeed(
+  fid: string, name: string, src: string, mode: DetectMode,
+  count: boolean, line: Line = "horizontal", classes = ""
+): Feed {
+  return { fid, name, src, mode, count, line, classes,
+           url: streamUrl(src, mode, { count, fid, line, classes }) };
 }
 
 export default function CameraWall({
@@ -61,6 +68,8 @@ export default function CameraWall({
   const [src, setSrc] = useState("sample");
   const [mode, setMode] = useState<DetectMode>("safety");
   const [count, setCount] = useState(true);
+  const [line, setLine] = useState<Line>("horizontal");
+  const [classes, setClasses] = useState("");
 
   // recording
   const recRef = useRef<{ on: boolean; startedAt: number; rows: RecRow[] }>({
@@ -179,7 +188,7 @@ export default function CameraWall({
     const fid = `cam-x${seed.current}`;
     setFeeds((f) => [
       ...f,
-      makeFeed(fid, name.trim() || `Camera ${f.length + 1}`, src.trim() || "sample", mode, count),
+      makeFeed(fid, name.trim() || `Camera ${f.length + 1}`, src.trim() || "sample", mode, count, line, classes),
     ]);
     setName("");
   };
@@ -195,7 +204,7 @@ export default function CameraWall({
       const next = [...prev];
       urls.forEach((u, i) => {
         seed.current += 1;
-        next.push(makeFeed(`cam-x${seed.current}`, `Camera ${prev.length + i + 1}`, u, mode, count));
+        next.push(makeFeed(`cam-x${seed.current}`, `Camera ${prev.length + i + 1}`, u, mode, count, line, classes));
       });
       return next;
     });
@@ -285,6 +294,21 @@ export default function CameraWall({
         </label>
         <label className="flex items-center gap-2 text-sm" style={{ color: "var(--text-dim)" }}>
           <input type="checkbox" checked={count} onChange={(e) => setCount(e.target.checked)} /> count footfall
+        </label>
+        {count && (
+          <label className="flex flex-col text-xs" style={{ color: "var(--text-dim)" }}>
+            Counting line
+            <select value={line} onChange={(e) => setLine(e.target.value as Line)}
+              className="mt-1 px-3 py-2 rounded-lg outline-none" style={inp}>
+              <option value="horizontal">— horizontal</option>
+              <option value="vertical">| vertical</option>
+            </select>
+          </label>
+        )}
+        <label className="flex flex-col text-xs" style={{ color: "var(--text-dim)" }}>
+          Detect classes <span style={{ color: "var(--text-faint)" }}>(blank = per-mode default)</span>
+          <input value={classes} onChange={(e) => setClasses(e.target.value)} placeholder="e.g. person,dog,cat,cow"
+            className="mt-1 px-3 py-2 rounded-lg outline-none" style={{ ...inp, minWidth: 180 }} />
         </label>
         <button className="btn btn-primary" style={{ background: `linear-gradient(120deg, ${accent}, var(--brand))` }} onClick={addFeed}>
           + Add camera

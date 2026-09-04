@@ -73,15 +73,18 @@ async def detect(
     conf: float = Form(0.35),
     seg: bool = Form(False),
     privacy: bool = Form(False),
+    classes: str = Form(""),
 ):
     """Run real Vision detection and interpret it for the given vertical.
 
-    seg=true → pixel-level instance segmentation; privacy=true → blur people.
+    seg=true → pixel-level instance segmentation; privacy=true → blur people;
+    classes = comma-separated class whitelist (default: per-mode).
     """
     if mode not in VALID_MODES:
         mode = "general"
     raw = await file.read()
-    return vision.detect(raw, mode=mode, conf=conf, seg=seg, privacy=privacy)
+    cls = [c.strip().lower() for c in classes.split(",") if c.strip()] or None
+    return vision.detect(raw, mode=mode, conf=conf, seg=seg, privacy=privacy, classes=cls)
 
 
 # --- Live camera / video stream (RTSP · HLS · HTTP-MJPEG · file · webcam) ---
@@ -105,16 +108,34 @@ STREAM_STATS: dict[str, dict] = {}
 HEATMAP: dict[str, "np.ndarray"] = {}
 H_ROWS, H_COLS = 36, 64
 
+# Serialize + cache YouTube resolves: opening several feeds at once would fire
+# concurrent yt-dlp calls and get rate-limited (so only the first feed streams).
+_RESOLVE_LOCK = threading.Lock()
+_RESOLVE_CACHE: dict[str, tuple[str, float]] = {}
+_RESOLVE_TTL = 180.0
+
 
 def _resolve_source(src: str) -> str:
     """Resolve web page URLs (YouTube live, etc.) to a direct video stream URL.
 
     Runs yt-dlp on THIS host so the extracted (often IP-locked) URL is fetched
-    from the same IP that resolved it — which is why pulling a YouTube live via
-    a locally-extracted link fails from a different server, but pasting the
-    watch URL and resolving here works.
+    from the same IP that resolved it. Resolves are serialized + cached so
+    opening multiple feeds together doesn't trigger YouTube rate-limiting.
     """
     if "youtube.com/" in src or "youtu.be/" in src:
+        hit = _RESOLVE_CACHE.get(src)
+        if hit and hit[1] > time.time():
+            return hit[0]
+        with _RESOLVE_LOCK:
+            hit = _RESOLVE_CACHE.get(src)
+            if hit and hit[1] > time.time():
+                return hit[0]
+            return _resolve_youtube(src)
+    return src
+
+
+def _resolve_youtube(src: str) -> str:
+    if True:  # noqa: SIM102 (keeps original block indentation)
         try:
             # Call yt-dlp via the current interpreter so it works whether it's
             # installed in a venv (dev) or system site-packages (container).
@@ -138,6 +159,7 @@ def _resolve_source(src: str) -> str:
             out = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
             for line in out.stdout.strip().splitlines():
                 if line.startswith("http"):
+                    _RESOLVE_CACHE[src] = (line, time.time() + _RESOLVE_TTL)
                     return line
             print(f"[resolve] yt-dlp could not resolve {src}: "
                   f"{(out.stderr or '').strip()[:400]}", flush=True)
@@ -173,7 +195,7 @@ def _ffmpeg_proc(url: str) -> subprocess.Popen:
 
 
 def _mjpeg(src: str, mode: str, conf: float, count: bool, line: str,
-          fid: str | None, seg: bool, privacy: bool):
+          fid: str | None, seg: bool, privacy: bool, classes: list[str] | None = None):
     """Generator yielding annotated MJPEG frames from any source (file/webcam/URL)."""
     boundary = b"--frame\r\nContent-Type: image/jpeg\r\n\r\n"
     resolved = _resolve_source(src)
@@ -187,7 +209,8 @@ def _mjpeg(src: str, mode: str, conf: float, count: bool, line: str,
     def render(frame):
         if counter is not None and tracker is not None:
             annotated, counts, cents = vision.annotate_tracked(frame, mode, counter, tracker,
-                                                               conf=conf, privacy=privacy)
+                                                               conf=conf, privacy=privacy,
+                                                               classes=classes)
             if fid:
                 sm = vision.stampede_metrics(vision.person_count(counts))
                 STREAM_STATS[fid] = {
@@ -202,7 +225,7 @@ def _mjpeg(src: str, mode: str, conf: float, count: bool, line: str,
                     grid[min(H_ROWS - 1, int(cy * H_ROWS)), min(H_COLS - 1, int(cx * H_COLS))] += 1
         else:
             annotated = vision.annotate_frame(frame, mode=mode, conf=conf,
-                                              seg=seg, privacy=privacy)
+                                              seg=seg, privacy=privacy, classes=classes)
         ok2, buf = cv2.imencode(".jpg", annotated, [cv2.IMWRITE_JPEG_QUALITY, 70])
         return (boundary + buf.tobytes() + b"\r\n") if ok2 else None
 
@@ -320,7 +343,7 @@ def _mjpeg(src: str, mode: str, conf: float, count: bool, line: str,
 @app.get("/api/stream")
 def stream(src: str, mode: str = "general", conf: float = 0.35,
            count: bool = False, line: str = "horizontal", fid: str | None = None,
-           seg: bool = False, privacy: bool = False):
+           seg: bool = False, privacy: bool = False, classes: str = ""):
     """Pull a live stream (or looping video/webcam) and return annotated MJPEG.
 
     `src` may be an RTSP/HLS/HTTP video URL, a local file path, or a webcam
@@ -329,7 +352,8 @@ def stream(src: str, mode: str = "general", conf: float = 0.35,
 
     Set `count=true` for footfall line-crossing counting (IN/OUT/NET) with
     `line` = "horizontal"|"vertical". Pass a `fid` to publish live per-feed
-    stats to /api/stream-stats (used by the multi-camera wall).
+    stats to /api/stream-stats. `classes` (comma-separated) restricts detection
+    (e.g. "person,dog,cat"); default is the per-mode whitelist.
     """
     if mode not in VALID_MODES:
         mode = "general"
@@ -337,8 +361,9 @@ def stream(src: str, mode: str = "general", conf: float = 0.35,
         src = SAMPLE_FEED
     if line not in ("horizontal", "vertical"):
         line = "horizontal"
+    cls = [c.strip().lower() for c in classes.split(",") if c.strip()] or None
     return StreamingResponse(
-        _mjpeg(src, mode, conf, count, line, fid, seg, privacy),
+        _mjpeg(src, mode, conf, count, line, fid, seg, privacy, cls),
         media_type="multipart/x-mixed-replace; boundary=frame",
     )
 

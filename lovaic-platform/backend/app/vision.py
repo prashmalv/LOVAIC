@@ -277,14 +277,36 @@ def _encode_jpeg(bgr: np.ndarray) -> str:
     return "data:image/jpeg;base64," + base64.b64encode(buf).decode("ascii")
 
 
-def _run(rgb: np.ndarray, mode: str, conf: float, model_key: str | None = None):
+# Per-mode class whitelist (substring match on model class names). Keeps the
+# engine from counting irrelevant objects — e.g. YOLO mislabelling a dense crowd
+# as "teddy bear". `None` = no filter. A request can override with its own list.
+MODE_CLASSES: dict[str, list[str] | None] = {
+    "safety": PERSON_MATCH,
+    "queue": PERSON_MATCH,
+    "retail": PERSON_MATCH,
+    "traffic": VEHICLE_MATCH + PERSON_MATCH,
+    "garbage": PLASTIC_MATCH,
+    "ppe": PERSON_MATCH + HELMET_MATCH,
+    "general": None,
+}
+
+
+def _run(rgb: np.ndarray, mode: str, conf: float, model_key: str | None = None,
+         classes: list[str] | None = None):
     """Core inference shared by snapshot detection and live streaming.
 
-    `model_key` overrides the per-mode model — e.g. "seg" for the pixel-level
-    instance-segmentation engine.
+    `model_key` overrides the per-mode model (e.g. "seg"). `classes` (a list of
+    class-name substrings) restricts what the engine detects; when omitted the
+    per-mode whitelist applies, so each vertical only sees relevant objects.
     """
     model = get_model(model_key or MODE_MODEL.get(mode, "coco"))
-    results = model.predict(rgb, conf=conf, verbose=False)
+    keep = classes if classes else MODE_CLASSES.get(mode)
+    predict_kw: dict[str, Any] = {}
+    if keep:
+        ids = [i for i, n in model.names.items() if any(k in n.lower() for k in keep)]
+        if ids:
+            predict_kw["classes"] = ids
+    results = model.predict(rgb, conf=conf, verbose=False, **predict_kw)
     r = results[0]
     names = r.names
 
@@ -334,14 +356,17 @@ def _apply_privacy(bgr: np.ndarray, r) -> np.ndarray:
 
 
 def detect(raw: bytes, mode: str = "general", conf: float = 0.35,
-           seg: bool = False, privacy: bool = False) -> dict[str, Any]:
+           seg: bool = False, privacy: bool = False,
+           classes: list[str] | None = None) -> dict[str, Any]:
     """Run detection and return annotated image + structured detections + insight.
 
     seg     → pixel-level instance segmentation (masks, not just boxes)
     privacy → blur detected people/faces in the returned frame
+    classes → restrict detection to these class-name substrings
     """
     rgb = _read_image(raw)
-    r, detections, counts, insight = _run(rgb, mode, conf, model_key="seg" if seg else None)
+    r, detections, counts, insight = _run(rgb, mode, conf,
+                                          model_key="seg" if seg else None, classes=classes)
     annotated = r.plot(boxes=not privacy)  # ultralytics returns BGR
     if privacy:
         annotated = _apply_privacy(annotated, r)
@@ -388,14 +413,15 @@ def _overlay_banner(bgr: np.ndarray, insight: Insight, mode: str) -> None:
 
 
 def annotate_frame(frame_bgr: np.ndarray, mode: str = "general", conf: float = 0.35,
-                   max_w: int = 640, seg: bool = False, privacy: bool = False) -> np.ndarray:
+                   max_w: int = 640, seg: bool = False, privacy: bool = False,
+                   classes: list[str] | None = None) -> np.ndarray:
     """Annotate a single BGR video frame (boxes/masks + status banner) for streaming."""
     h, w = frame_bgr.shape[:2]
     if w > max_w:
         scale = max_w / w
         frame_bgr = cv2.resize(frame_bgr, (max_w, int(h * scale)))
     rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
-    r, _, _, insight = _run(rgb, mode, conf, model_key="seg" if seg else None)
+    r, _, _, insight = _run(rgb, mode, conf, model_key="seg" if seg else None, classes=classes)
     annotated = r.plot(boxes=not privacy)  # BGR
     if privacy:
         annotated = _apply_privacy(annotated, r)
@@ -485,19 +511,21 @@ def stampede_metrics(persons: int) -> dict[str, Any]:
 
 def annotate_tracked(frame_bgr: np.ndarray, mode: str, counter: LineCounter,
                      tracker: SimpleTracker, conf: float = 0.35,
-                     max_w: int = 640, privacy: bool = False
+                     max_w: int = 640, privacy: bool = False,
+                     classes: list[str] | None = None
                      ) -> tuple[np.ndarray, dict[str, int], list[tuple[float, float]]]:
     """Annotate a frame with boxes + crossing line + IN/OUT tally.
 
     Returns (annotated_bgr, class_counts, normalized_centroids). Uses the feed's
     own tracker so counting is isolated per camera. `privacy` blurs people.
+    `classes` restricts detection to given class-name substrings.
     """
     h0, w0 = frame_bgr.shape[:2]
     if w0 > max_w:
         s = max_w / w0
         frame_bgr = cv2.resize(frame_bgr, (max_w, int(h0 * s)))
     rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
-    r, _, counts, insight = _run(rgb, mode, conf)
+    r, _, counts, insight = _run(rgb, mode, conf, classes=classes)
 
     centroids: list[tuple[float, float]] = []
     if r.boxes is not None:
