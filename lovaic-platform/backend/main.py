@@ -74,17 +74,19 @@ async def detect(
     seg: bool = Form(False),
     privacy: bool = Form(False),
     classes: str = Form(""),
+    gender: bool = Form(False),
 ):
     """Run real Vision detection and interpret it for the given vertical.
 
     seg=true → pixel-level instance segmentation; privacy=true → blur people;
-    classes = comma-separated class whitelist (default: per-mode).
+    classes = comma-separated class whitelist (default: per-mode);
+    gender=true → estimate male/female on detected faces.
     """
     if mode not in VALID_MODES:
         mode = "general"
     raw = await file.read()
     cls = [c.strip().lower() for c in classes.split(",") if c.strip()] or None
-    return vision.detect(raw, mode=mode, conf=conf, seg=seg, privacy=privacy, classes=cls)
+    return vision.detect(raw, mode=mode, conf=conf, seg=seg, privacy=privacy, classes=cls, gender=gender)
 
 
 # --- Live camera / video stream (RTSP · HLS · HTTP-MJPEG · file · webcam) ---
@@ -195,7 +197,9 @@ def _ffmpeg_proc(url: str) -> subprocess.Popen:
 
 
 def _mjpeg(src: str, mode: str, conf: float, count: bool, line: str,
-          fid: str | None, seg: bool, privacy: bool, classes: list[str] | None = None):
+          fid: str | None, seg: bool, privacy: bool, classes: list[str] | None = None,
+          line_pos: float = 0.5, roi: tuple[float, float, float, float] | None = None,
+          gender: bool = False):
     """Generator yielding annotated MJPEG frames from any source (file/webcam/URL)."""
     boundary = b"--frame\r\nContent-Type: image/jpeg\r\n\r\n"
     resolved = _resolve_source(src)
@@ -203,14 +207,28 @@ def _mjpeg(src: str, mode: str, conf: float, count: bool, line: str,
     is_file = os.path.exists(resolved)
     is_remote = not is_webcam and not is_file
 
-    counter = vision.LineCounter(line) if count else None
+    counter = vision.LineCounter(line, line_pos) if count else None
     tracker = vision.SimpleTracker() if count else None
 
+    def crop(frame):
+        # detect only inside the ROI window (normalized x1,y1,x2,y2)
+        if not roi:
+            return frame
+        h, w = frame.shape[:2]
+        x1, y1, x2, y2 = roi
+        cx1, cy1, cx2, cy2 = int(x1 * w), int(y1 * h), int(x2 * w), int(y2 * h)
+        cx1, cy1 = max(0, cx1), max(0, cy1)
+        cx2, cy2 = min(w, cx2), min(h, cy2)
+        if cx2 - cx1 < 8 or cy2 - cy1 < 8:
+            return frame
+        return frame[cy1:cy2, cx1:cx2]
+
     def render(frame):
+        frame = crop(frame)
         if counter is not None and tracker is not None:
             annotated, counts, cents = vision.annotate_tracked(frame, mode, counter, tracker,
                                                                conf=conf, privacy=privacy,
-                                                               classes=classes)
+                                                               classes=classes, gender=gender)
             if fid:
                 sm = vision.stampede_metrics(vision.person_count(counts))
                 STREAM_STATS[fid] = {
@@ -225,7 +243,8 @@ def _mjpeg(src: str, mode: str, conf: float, count: bool, line: str,
                     grid[min(H_ROWS - 1, int(cy * H_ROWS)), min(H_COLS - 1, int(cx * H_COLS))] += 1
         else:
             annotated = vision.annotate_frame(frame, mode=mode, conf=conf,
-                                              seg=seg, privacy=privacy, classes=classes)
+                                              seg=seg, privacy=privacy, classes=classes,
+                                              gender=gender)
         ok2, buf = cv2.imencode(".jpg", annotated, [cv2.IMWRITE_JPEG_QUALITY, 70])
         return (boundary + buf.tobytes() + b"\r\n") if ok2 else None
 
@@ -343,7 +362,8 @@ def _mjpeg(src: str, mode: str, conf: float, count: bool, line: str,
 @app.get("/api/stream")
 def stream(src: str, mode: str = "general", conf: float = 0.35,
            count: bool = False, line: str = "horizontal", fid: str | None = None,
-           seg: bool = False, privacy: bool = False, classes: str = ""):
+           seg: bool = False, privacy: bool = False, classes: str = "",
+           line_pos: float = 0.5, roi: str = "", gender: bool = False):
     """Pull a live stream (or looping video/webcam) and return annotated MJPEG.
 
     `src` may be an RTSP/HLS/HTTP video URL, a local file path, or a webcam
@@ -362,8 +382,17 @@ def stream(src: str, mode: str = "general", conf: float = 0.35,
     if line not in ("horizontal", "vertical"):
         line = "horizontal"
     cls = [c.strip().lower() for c in classes.split(",") if c.strip()] or None
+    roi_t = None
+    if roi:
+        try:
+            vals = [float(v) for v in roi.split(",")]
+            if len(vals) == 4:
+                roi_t = (min(vals[0], vals[2]), min(vals[1], vals[3]),
+                         max(vals[0], vals[2]), max(vals[1], vals[3]))
+        except ValueError:
+            roi_t = None
     return StreamingResponse(
-        _mjpeg(src, mode, conf, count, line, fid, seg, privacy, cls),
+        _mjpeg(src, mode, conf, count, line, fid, seg, privacy, cls, line_pos, roi_t, gender),
         media_type="multipart/x-mixed-replace; boundary=frame",
     )
 

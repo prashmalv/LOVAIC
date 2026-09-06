@@ -32,6 +32,7 @@ interface Feed {
   count: boolean;
   line: "horizontal" | "vertical";
   classes: string;
+  gender: boolean;
   url: string; // computed once so re-renders never restart the stream
 }
 
@@ -40,10 +41,10 @@ type Line = "horizontal" | "vertical";
 
 function makeFeed(
   fid: string, name: string, src: string, mode: DetectMode,
-  count: boolean, line: Line = "horizontal", classes = ""
+  count: boolean, line: Line = "horizontal", classes = "", gender = false
 ): Feed {
-  return { fid, name, src, mode, count, line, classes,
-           url: streamUrl(src, mode, { count, fid, line, classes }) };
+  return { fid, name, src, mode, count, line, classes, gender,
+           url: streamUrl(src, mode, { count, fid, line, classes, gender }) };
 }
 
 export default function CameraWall({
@@ -70,6 +71,7 @@ export default function CameraWall({
   const [count, setCount] = useState(true);
   const [line, setLine] = useState<Line>("horizontal");
   const [classes, setClasses] = useState("");
+  const [gender, setGender] = useState(false);
 
   // recording
   const recRef = useRef<{ on: boolean; startedAt: number; rows: RecRow[] }>({
@@ -188,7 +190,7 @@ export default function CameraWall({
     const fid = `cam-x${seed.current}`;
     setFeeds((f) => [
       ...f,
-      makeFeed(fid, name.trim() || `Camera ${f.length + 1}`, src.trim() || "sample", mode, count, line, classes),
+      makeFeed(fid, name.trim() || `Camera ${f.length + 1}`, src.trim() || "sample", mode, count, line, classes, gender),
     ]);
     setName("");
   };
@@ -204,7 +206,7 @@ export default function CameraWall({
       const next = [...prev];
       urls.forEach((u, i) => {
         seed.current += 1;
-        next.push(makeFeed(`cam-x${seed.current}`, `Camera ${prev.length + i + 1}`, u, mode, count, line, classes));
+        next.push(makeFeed(`cam-x${seed.current}`, `Camera ${prev.length + i + 1}`, u, mode, count, line, classes, gender));
       });
       return next;
     });
@@ -294,6 +296,9 @@ export default function CameraWall({
         </label>
         <label className="flex items-center gap-2 text-sm" style={{ color: "var(--text-dim)" }}>
           <input type="checkbox" checked={count} onChange={(e) => setCount(e.target.checked)} /> count footfall
+        </label>
+        <label className="flex items-center gap-2 text-sm" style={{ color: "var(--text-dim)" }}>
+          <input type="checkbox" checked={gender} onChange={(e) => setGender(e.target.checked)} /> gender
         </label>
         {count && (
           <label className="flex flex-col text-xs" style={{ color: "var(--text-dim)" }}>

@@ -355,9 +355,58 @@ def _apply_privacy(bgr: np.ndarray, r) -> np.ndarray:
     return bgr
 
 
+# ---------------------------------------------------------------------------
+# Gender estimation (best-effort): Haar face detector + Caffe gender net.
+# Accurate on clear/close faces; on dense low-res crowds treat as indicative.
+# ---------------------------------------------------------------------------
+_GENDER_NET = None
+_FACE_CASCADE = None
+_GENDER_LABELS = ["Male", "Female"]
+_GENDER_MEAN = (78.4263377603, 87.7689143744, 114.895847746)
+
+
+def _gender_models():
+    global _GENDER_NET, _FACE_CASCADE
+    if _GENDER_NET is None:
+        base = os.path.join(os.path.dirname(__file__), "..", "models")
+        proto = os.path.join(base, "gender_deploy.prototxt")
+        model = os.path.join(base, "gender_net.caffemodel")
+        if not (os.path.exists(proto) and os.path.exists(model)):
+            return None, None
+        _GENDER_NET = cv2.dnn.readNet(model, proto)
+        _FACE_CASCADE = cv2.CascadeClassifier(
+            cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
+    return _GENDER_NET, _FACE_CASCADE
+
+
+def annotate_gender(bgr: np.ndarray) -> tuple[int, int]:
+    """Detect faces, classify gender, draw M/F markers. Returns (male, female)."""
+    net, casc = _gender_models()
+    if net is None or casc is None:
+        return 0, 0
+    gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+    faces = casc.detectMultiScale(gray, 1.15, 5, minSize=(24, 24))
+    male = female = 0
+    for (x, y, w, h) in faces:
+        face = bgr[max(0, y):y + h, max(0, x):x + w]
+        if face.size == 0:
+            continue
+        blob = cv2.dnn.blobFromImage(face, 1.0, (227, 227), _GENDER_MEAN, swapRB=False)
+        net.setInput(blob)
+        g = _GENDER_LABELS[int(net.forward()[0].argmax())]
+        col = (255, 140, 0) if g == "Male" else (180, 90, 255)
+        cv2.rectangle(bgr, (x, y), (x + w, y + h), col, 1)
+        cv2.putText(bgr, g[0], (x, y - 4), cv2.FONT_HERSHEY_SIMPLEX, 0.5, col, 1, cv2.LINE_AA)
+        if g == "Male":
+            male += 1
+        else:
+            female += 1
+    return male, female
+
+
 def detect(raw: bytes, mode: str = "general", conf: float = 0.35,
            seg: bool = False, privacy: bool = False,
-           classes: list[str] | None = None) -> dict[str, Any]:
+           classes: list[str] | None = None, gender: bool = False) -> dict[str, Any]:
     """Run detection and return annotated image + structured detections + insight.
 
     seg     → pixel-level instance segmentation (masks, not just boxes)
@@ -370,6 +419,12 @@ def detect(raw: bytes, mode: str = "general", conf: float = 0.35,
     annotated = r.plot(boxes=not privacy)  # ultralytics returns BGR
     if privacy:
         annotated = _apply_privacy(annotated, r)
+    if gender:
+        m, f = annotate_gender(annotated)
+        if m:
+            counts["Male"] = m
+        if f:
+            counts["Female"] = f
     return {
         "mode": mode,
         "engine": "LOVAIC RLAI · pixel-segmentation" if seg else "LOVAIC RLAI",
@@ -414,7 +469,7 @@ def _overlay_banner(bgr: np.ndarray, insight: Insight, mode: str) -> None:
 
 def annotate_frame(frame_bgr: np.ndarray, mode: str = "general", conf: float = 0.35,
                    max_w: int = 640, seg: bool = False, privacy: bool = False,
-                   classes: list[str] | None = None) -> np.ndarray:
+                   classes: list[str] | None = None, gender: bool = False) -> np.ndarray:
     """Annotate a single BGR video frame (boxes/masks + status banner) for streaming."""
     h, w = frame_bgr.shape[:2]
     if w > max_w:
@@ -425,6 +480,8 @@ def annotate_frame(frame_bgr: np.ndarray, mode: str = "general", conf: float = 0
     annotated = r.plot(boxes=not privacy)  # BGR
     if privacy:
         annotated = _apply_privacy(annotated, r)
+    if gender:
+        annotate_gender(annotated)
     _overlay_banner(annotated, insight, mode)
     return annotated
 
@@ -474,16 +531,20 @@ class SimpleTracker:
 
 
 class LineCounter:
-    """Counts tracked objects crossing a virtual mid-line, split IN vs OUT."""
+    """Counts tracked objects crossing a virtual line, split IN vs OUT.
 
-    def __init__(self, orientation: str = "horizontal"):
+    `pos` (0-1) places the line anywhere along the perpendicular axis.
+    """
+
+    def __init__(self, orientation: str = "horizontal", pos: float = 0.5):
         self.orientation = orientation  # "horizontal" | "vertical"
+        self.pos = min(0.98, max(0.02, pos))
         self.in_count = 0
         self.out_count = 0
         self._side: dict[int, int] = {}
 
     def update(self, tracks: list[tuple[int, float, float]], w: int, h: int) -> None:
-        line = h / 2 if self.orientation == "horizontal" else w / 2
+        line = h * self.pos if self.orientation == "horizontal" else w * self.pos
         for tid, cx, cy in tracks:
             pos = cy if self.orientation == "horizontal" else cx
             side = 1 if pos >= line else -1
@@ -512,7 +573,7 @@ def stampede_metrics(persons: int) -> dict[str, Any]:
 def annotate_tracked(frame_bgr: np.ndarray, mode: str, counter: LineCounter,
                      tracker: SimpleTracker, conf: float = 0.35,
                      max_w: int = 640, privacy: bool = False,
-                     classes: list[str] | None = None
+                     classes: list[str] | None = None, gender: bool = False
                      ) -> tuple[np.ndarray, dict[str, int], list[tuple[float, float]]]:
     """Annotate a frame with boxes + crossing line + IN/OUT tally.
 
@@ -541,9 +602,11 @@ def annotate_tracked(frame_bgr: np.ndarray, mode: str, counter: LineCounter,
     counter.update([(i, cx, cy) for i, (cx, cy) in zip(ids, centroids)], w, h)
 
     if counter.orientation == "horizontal":
-        cv2.line(annotated, (0, h // 2), (w, h // 2), (108, 99, 255), 2)
+        ly = int(h * counter.pos)
+        cv2.line(annotated, (0, ly), (w, ly), (108, 99, 255), 2)
     else:
-        cv2.line(annotated, (w // 2, 0), (w // 2, h), (108, 99, 255), 2)
+        lx = int(w * counter.pos)
+        cv2.line(annotated, (lx, 0), (lx, h), (108, 99, 255), 2)
 
     _overlay_banner(annotated, insight, mode)
 
@@ -552,6 +615,13 @@ def annotate_tracked(frame_bgr: np.ndarray, mode: str, counter: LineCounter,
     cv2.rectangle(annotated, (8, h - th - 18), (8 + tw + 16, h - 6), (18, 12, 12), -1)
     cv2.putText(annotated, label, (16, h - 14), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
                 (34, 224, 161), 2, cv2.LINE_AA)
+
+    if gender:
+        gm, gf = annotate_gender(annotated)
+        if gm:
+            counts["Male"] = gm
+        if gf:
+            counts["Female"] = gf
 
     # stampede-risk chip (bottom-right)
     sm = stampede_metrics(person_count(counts))

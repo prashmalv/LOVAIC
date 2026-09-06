@@ -34,16 +34,25 @@ export function streamUrl(
     seg?: boolean;
     privacy?: boolean;
     classes?: string;
+    linePos?: number;
+    roi?: { x: number; y: number; w: number; h: number } | null;
+    gender?: boolean;
   } = {}
 ): string {
   const p = new URLSearchParams({ src, mode, conf: String(opts.conf ?? 0.35) });
   if (opts.count) {
     p.set("count", "true");
     p.set("line", opts.line ?? "horizontal");
+    if (opts.linePos != null) p.set("line_pos", opts.linePos.toFixed(3));
   }
   if (opts.seg) p.set("seg", "true");
   if (opts.privacy) p.set("privacy", "true");
+  if (opts.gender) p.set("gender", "true");
   if (opts.classes && opts.classes.trim()) p.set("classes", opts.classes.trim());
+  if (opts.roi) {
+    const r = opts.roi;
+    p.set("roi", [r.x, r.y, r.x + r.w, r.y + r.h].map((n) => n.toFixed(3)).join(","));
+  }
   if (opts.fid) p.set("fid", opts.fid);
   // cache-buster so reconnecting with new options always restarts the stream
   p.set("t", String(Date.now()));
@@ -94,6 +103,7 @@ export interface DetectOpts {
   conf?: number;
   seg?: boolean;
   privacy?: boolean;
+  gender?: boolean;
 }
 
 export async function detect(
@@ -107,6 +117,7 @@ export async function detect(
   fd.append("conf", String(opts.conf ?? 0.35));
   if (opts.seg) fd.append("seg", "true");
   if (opts.privacy) fd.append("privacy", "true");
+  if (opts.gender) fd.append("gender", "true");
   const res = await fetch(`${API_BASE}/api/detect`, { method: "POST", body: fd });
   if (!res.ok) throw new Error(`Detection failed (${res.status})`);
   return res.json();

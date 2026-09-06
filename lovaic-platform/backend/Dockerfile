@@ -15,6 +15,14 @@ RUN curl -fsSL https://deno.land/install.sh | DENO_INSTALL=/usr/local sh \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Gender model (best-effort male/female estimate) — not stored in git.
+RUN mkdir -p models \
+    && curl -fsSL -o models/gender_deploy.prototxt \
+        https://raw.githubusercontent.com/spmallick/learnopencv/master/AgeGender/gender_deploy.prototxt \
+    && curl -fsSL -o models/gender_net.caffemodel \
+        https://github.com/smahesh29/Gender-and-Age-Detection/raw/master/gender_net.caffemodel \
+    || echo "gender model download skipped (feature will no-op)"
+
 COPY . .
 
 # Model weights (yolov8n.pt, yolov8n-oiv7.pt) download lazily on first request.

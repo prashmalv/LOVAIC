@@ -29,6 +29,7 @@ export default function LiveDetect({
   const [view, setView] = useState<"snapshot" | "live">("snapshot");
   const [seg, setSeg] = useState(true);
   const [privacy, setPrivacy] = useState(false);
+  const [gender, setGender] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const run = useCallback(
@@ -38,7 +39,7 @@ export default function LiveDetect({
       setPreview(URL.createObjectURL(file));
       setLoading(true);
       try {
-        const r = await detect(file, mode, { seg, privacy });
+        const r = await detect(file, mode, { seg, privacy, gender });
         setResult(r);
       } catch (e) {
         setError(
@@ -48,7 +49,7 @@ export default function LiveDetect({
         setLoading(false);
       }
     },
-    [mode, seg, privacy]
+    [mode, seg, privacy, gender]
   );
 
   const onFile = (f?: File | null) => {
@@ -82,10 +83,11 @@ export default function LiveDetect({
 
         <Toggle on={seg} setOn={setSeg} accent={accent} label="◆ Pixel masks" title="Pixel-level instance segmentation — LOVAIC's edge over box-only detectors" />
         <Toggle on={privacy} setOn={setPrivacy} accent="var(--green)" label="🛡 Privacy blur" title="On-frame redaction of people/faces — privacy by design" />
+        <Toggle on={gender} setOn={setGender} accent="#ff8a4c" label="⚥ Gender" title="Best-effort male/female estimate on detected faces (accurate on clear faces; indicative on crowds)" />
       </div>
 
       {view === "live" ? (
-        <LiveCamera mode={mode} accent={accent} seg={seg} privacy={privacy} />
+        <LiveCamera mode={mode} accent={accent} seg={seg} privacy={privacy} gender={gender} />
       ) : (
         SnapshotView()
       )}

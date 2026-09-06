@@ -18,6 +18,8 @@ next-env.d.ts
 # Model weights (auto-downloaded at runtime) + training outputs
 *.pt
 runs/
+# Gender model (downloaded in Dockerfile / on first setup — 45 MB, not in git)
+backend/models/
 
 # Generated demo assets + runtime data
 backend/storage/*.mp4

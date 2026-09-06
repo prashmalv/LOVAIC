@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { detect, DetectResult, streamUrl } from "@/lib/api";
 import { DetectMode } from "@/lib/config";
 import { SeverityPill } from "./ui";
+import ZoneEditor, { Zone } from "./ZoneEditor";
 
 const CW = 640; // capture width sent to the engine
 
@@ -13,11 +14,13 @@ export default function LiveCamera({
   accent = "#6c63ff",
   seg = false,
   privacy = false,
+  gender = false,
 }: {
   mode: DetectMode;
   accent?: string;
   seg?: boolean;
   privacy?: boolean;
+  gender?: boolean;
 }) {
   const [sub, setSub] = useState<Sub>("webcam");
   return (
@@ -41,9 +44,9 @@ export default function LiveCamera({
         ))}
       </div>
       {sub === "webcam" ? (
-        <Webcam mode={mode} accent={accent} seg={seg} privacy={privacy} />
+        <Webcam mode={mode} accent={accent} seg={seg} privacy={privacy} gender={gender} />
       ) : (
-        <RemoteStream mode={mode} accent={accent} seg={seg} privacy={privacy} />
+        <RemoteStream mode={mode} accent={accent} seg={seg} privacy={privacy} gender={gender} />
       )}
     </div>
   );
@@ -62,7 +65,7 @@ interface Box {
 const DETECT_INTERVAL = 300; // ms between engine calls (throttle → light on CPU)
 const LERP = 0.35; // box glide factor per animation frame
 
-function Webcam({ mode, accent, seg, privacy }: { mode: DetectMode; accent: string; seg: boolean; privacy: boolean }) {
+function Webcam({ mode, accent, seg, privacy, gender }: { mode: DetectMode; accent: string; seg: boolean; privacy: boolean; gender: boolean }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const overlayRef = useRef<HTMLCanvasElement>(null);
@@ -161,7 +164,7 @@ function Webcam({ mode, accent, seg, privacy }: { mode: DetectMode; accent: stri
       try {
         const f = await capture();
         if (f) {
-          const r = await detect(f, mode, { seg, privacy });
+          const r = await detect(f, mode, { seg, privacy, gender });
           setResult(r);
           targetRef.current = r.detections.map((d) => ({
             label: d.label,
@@ -185,7 +188,7 @@ function Webcam({ mode, accent, seg, privacy }: { mode: DetectMode; accent: stri
       const elapsed = performance.now() - t0;
       setTimeout(tick, Math.max(0, DETECT_INTERVAL - elapsed));
     }
-  }, [mode, capture, seg, privacy]);
+  }, [mode, capture, seg, privacy, gender]);
 
   const start = useCallback(async () => {
     setError(null);
@@ -273,11 +276,19 @@ function Webcam({ mode, accent, seg, privacy }: { mode: DetectMode; accent: stri
 }
 
 /* --------------------------- REMOTE STREAM --------------------------- */
-function RemoteStream({ mode, accent, seg, privacy }: { mode: DetectMode; accent: string; seg: boolean; privacy: boolean }) {
+function RemoteStream({ mode, accent, seg, privacy, gender }: { mode: DetectMode; accent: string; seg: boolean; privacy: boolean; gender: boolean }) {
   const [url, setUrl] = useState("");
   const [active, setActive] = useState<string | null>(null);
   const [count, setCount] = useState(false);
   const [line, setLine] = useState<"horizontal" | "vertical">("horizontal");
+  const [classes, setClasses] = useState("");
+  const [zone, setZone] = useState<Zone>({ linePos: 0.5, roi: null });
+  const [editZone, setEditZone] = useState(false);
+  const [lastSrc, setLastSrc] = useState("");
+  const connectTo = (s: string) => {
+    setLastSrc(s);
+    setActive(streamUrl(s, mode, { count, line, seg, privacy, gender, classes, linePos: zone.linePos, roi: zone.roi }));
+  };
 
   const samples = [
     { label: "YouTube live (temple)", value: "https://www.youtube.com/watch?v=GjGBxoQrP3k" },
@@ -286,15 +297,13 @@ function RemoteStream({ mode, accent, seg, privacy }: { mode: DetectMode; accent
     { label: "HLS example", value: "https://<host>/live/stream.m3u8" },
   ];
 
-  const opts = { count, line, seg, privacy };
-
   return (
     <div className="grid lg:grid-cols-2 gap-5">
       <div className="card p-5">
         <button
           className="btn btn-primary w-full mb-4"
           style={{ background: `linear-gradient(120deg, ${accent}, var(--brand))` }}
-          onClick={() => setActive(streamUrl("sample", mode, opts))}
+          onClick={() => connectTo("sample")}
         >
           ▶ Play sample street feed (no setup)
         </button>
@@ -338,11 +347,44 @@ function RemoteStream({ mode, accent, seg, privacy }: { mode: DetectMode; accent
           )}
         </div>
 
+        {/* detect classes */}
+        <label className="flex flex-col text-xs mt-3" style={{ color: "var(--text-dim)" }}>
+          Detect classes <span style={{ color: "var(--text-faint)" }}>(blank = per-mode default; e.g. person,dog,cow)</span>
+          <input value={classes} onChange={(e) => setClasses(e.target.value)} placeholder="person,dog,cat,cow"
+            className="mt-1 px-3 py-2 rounded-lg outline-none" style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)" }} />
+        </label>
+
+        {/* zone / line editor */}
+        <div className="flex items-center justify-between mt-3 p-3 rounded-xl" style={{ background: "var(--surface-2)" }}>
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input type="checkbox" checked={editZone} onChange={(e) => setEditZone(e.target.checked)} />
+            ✏️ Edit zone / line on the feed
+          </label>
+          <div className="flex gap-2">
+            <button className="pill" style={{ cursor: "pointer", color: "var(--text-dim)" }}
+              onClick={() => setZone({ linePos: 0.5, roi: null })}>
+              Reset
+            </button>
+            {editZone && lastSrc && (
+              <button className="pill" style={{ cursor: "pointer", color: accent, borderColor: accent }}
+                onClick={() => connectTo(lastSrc)}>
+                Apply ✓
+              </button>
+            )}
+          </div>
+        </div>
+        {editZone && (
+          <div className="text-xs mt-2" style={{ color: "var(--text-faint)" }}>
+            Drag the line to move it anywhere · drag on the feed to draw a detection zone,
+            drag corners to resize · then <b>Apply ✓</b> (detection runs only inside the zone).
+          </div>
+        )}
+
         <div className="flex gap-2 mt-4">
           <button
             className="btn btn-primary flex-1"
             style={{ background: `linear-gradient(120deg, ${accent}, var(--brand))` }}
-            onClick={() => url.trim() && setActive(streamUrl(url.trim(), mode, opts))}
+            onClick={() => url.trim() && connectTo(url.trim())}
           >
             Connect & analyze
           </button>
@@ -366,7 +408,7 @@ function RemoteStream({ mode, accent, seg, privacy }: { mode: DetectMode; accent
             {active ? "● LIVE ANNOTATED FEED" : "No feed connected"}
           </div>
         </div>
-        <div className="rounded-xl overflow-hidden flex items-center justify-center" style={{ background: "#000", minHeight: 260 }}>
+        <div className="rounded-xl overflow-hidden flex items-center justify-center" style={{ background: "#000", minHeight: 260, position: "relative" }}>
           {active ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={active} alt="live stream" style={{ width: "100%", display: "block" }} />
@@ -375,6 +417,9 @@ function RemoteStream({ mode, accent, seg, privacy }: { mode: DetectMode; accent
               <div className="text-4xl mb-2">🌐</div>
               <div className="text-sm">Enter a stream URL and connect</div>
             </div>
+          )}
+          {editZone && active && (
+            <ZoneEditor orientation={line} count={count} value={zone} onChange={setZone} accent={accent} />
           )}
         </div>
       </div>
