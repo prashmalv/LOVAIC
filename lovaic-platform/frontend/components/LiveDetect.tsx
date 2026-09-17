@@ -3,6 +3,7 @@ import { useCallback, useRef, useState } from "react";
 import { detect, DetectResult } from "@/lib/api";
 import { DetectMode } from "@/lib/config";
 import LiveCamera from "./LiveCamera";
+import SceneAI from "./SceneAI";
 import { SeverityPill } from "./ui";
 
 const SOURCES = [
@@ -26,7 +27,7 @@ export default function LiveDetect({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [source, setSource] = useState("cctv");
-  const [view, setView] = useState<"snapshot" | "live">("snapshot");
+  const [view, setView] = useState<"snapshot" | "live" | "scene">("snapshot");
   const [seg, setSeg] = useState(true);
   const [privacy, setPrivacy] = useState(false);
   const [gender, setGender] = useState(false);
@@ -62,6 +63,7 @@ export default function LiveDetect({
         {([
           { id: "snapshot", label: "🖼️ Snapshot" },
           { id: "live", label: "🔴 Live camera" },
+          { id: "scene", label: "🧠 Scene AI · LOVAIC SLM" },
         ] as const).map((t) => (
           <button
             key={t.id}
@@ -88,6 +90,8 @@ export default function LiveDetect({
 
       {view === "live" ? (
         <LiveCamera mode={mode} accent={accent} seg={seg} privacy={privacy} gender={gender} />
+      ) : view === "scene" ? (
+        <SceneAI mode={mode} accent="#8b83ff" />
       ) : (
         SnapshotView()
       )}

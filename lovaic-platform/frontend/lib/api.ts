@@ -87,6 +87,33 @@ export async function streamStats(fids: string[]): Promise<StreamStats> {
   return res.json();
 }
 
+// --- LOVAIC SLM (sovereign vision-language model) -------------------------
+
+export interface VlmResult {
+  text: string;
+  tier?: string;
+  error?: boolean;
+}
+
+export async function analyzeVLM(file: File, prompt: string, tier = "lite"): Promise<VlmResult> {
+  const fd = new FormData();
+  fd.append("file", file);
+  fd.append("prompt", prompt);
+  fd.append("tier", tier);
+  const res = await fetch(`${API_BASE}/api/vlm`, { method: "POST", body: fd });
+  if (!res.ok) throw new Error(`LOVAIC SLM failed (${res.status})`);
+  return res.json();
+}
+
+export async function analyzeVLMFrame(
+  src: string, prompt: string, mode: string, tier = "lite"
+): Promise<VlmResult> {
+  const p = new URLSearchParams({ src, prompt, mode, tier });
+  const res = await fetch(`${API_BASE}/api/vlm-frame?${p.toString()}`);
+  if (!res.ok) throw new Error(`LOVAIC SLM failed (${res.status})`);
+  return res.json();
+}
+
 export function heatmapUrl(fid: string): string {
   return `${API_BASE}/api/heatmap?fid=${encodeURIComponent(fid)}&t=${Date.now()}`;
 }

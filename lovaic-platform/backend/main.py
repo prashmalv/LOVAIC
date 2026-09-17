@@ -446,6 +446,57 @@ def heatmap(fid: str):
     return Response(content=buf.tobytes(), media_type="image/png")
 
 
+# --- LOVAIC SLM (sovereign vision-language model) ---------------------------
+
+def _grab_one_frame(src: str):
+    """Grab a single frame from any source for one-off VLM analysis."""
+    resolved = _resolve_source(src)
+    cap = cv2.VideoCapture(int(resolved) if resolved.isdigit() else resolved)
+    if not cap.isOpened():
+        return None
+    frame = None
+    for _ in range(8):  # skip initial buffer, keep the freshest frame
+        ok, f = cap.read()
+        if ok and f is not None:
+            frame = f
+    cap.release()
+    return frame
+
+
+@app.post("/api/vlm")
+async def vlm_analyze(file: UploadFile = File(...), prompt: str = Form(""),
+                      tier: str = Form("lite")):
+    """Analyze an uploaded frame with LOVAIC SLM (SmolVLM)."""
+    from app import vlm
+
+    raw = await file.read()
+    p = prompt.strip() or vlm.PROMPTS["general"]
+    try:
+        text = vlm.analyze(raw, p, "pro" if tier == "pro" else "lite")
+        return {"text": text, "tier": tier}
+    except Exception as e:  # noqa: BLE001
+        return {"text": f"LOVAIC SLM is not available on this host: {e}", "error": True}
+
+
+@app.get("/api/vlm-frame")
+def vlm_frame(src: str, prompt: str = "", tier: str = "lite", mode: str = "general"):
+    """Grab one frame from a live source and analyze it with LOVAIC SLM."""
+    from app import vlm
+
+    if src == "sample":
+        src = SAMPLE_FEED
+    frame = _grab_one_frame(src)
+    if frame is None:
+        return {"text": "Could not grab a frame from this source.", "error": True}
+    _, buf = cv2.imencode(".jpg", frame)
+    p = prompt.strip() or vlm.PROMPTS.get(mode, vlm.PROMPTS["general"])
+    try:
+        text = vlm.analyze(buf.tobytes(), p, "pro" if tier == "pro" else "lite")
+        return {"text": text, "tier": tier}
+    except Exception as e:  # noqa: BLE001
+        return {"text": f"LOVAIC SLM is not available on this host: {e}", "error": True}
+
+
 # --- Lost & Found citizen portal -------------------------------------------
 
 @app.post("/api/lostfound/report")
