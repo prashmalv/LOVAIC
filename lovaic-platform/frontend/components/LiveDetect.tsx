@@ -4,6 +4,7 @@ import { detect, DetectResult } from "@/lib/api";
 import { DetectMode } from "@/lib/config";
 import LiveCamera from "./LiveCamera";
 import SceneAI from "./SceneAI";
+import SmartMonitor from "./SmartMonitor";
 import { SeverityPill } from "./ui";
 
 const SOURCES = [
@@ -27,7 +28,7 @@ export default function LiveDetect({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [source, setSource] = useState("cctv");
-  const [view, setView] = useState<"snapshot" | "live" | "scene">("snapshot");
+  const [view, setView] = useState<"snapshot" | "live" | "scene" | "smart">("snapshot");
   const [seg, setSeg] = useState(true);
   const [privacy, setPrivacy] = useState(false);
   const [gender, setGender] = useState(false);
@@ -64,6 +65,7 @@ export default function LiveDetect({
           { id: "snapshot", label: "🖼️ Snapshot" },
           { id: "live", label: "🔴 Live camera" },
           { id: "scene", label: "🧠 LOVAIC SLM" },
+          { id: "smart", label: "⚡ Smart Monitor" },
         ] as const).map((t) => (
           <button
             key={t.id}
@@ -92,6 +94,8 @@ export default function LiveDetect({
         <LiveCamera mode={mode} accent={accent} seg={seg} privacy={privacy} gender={gender} />
       ) : view === "scene" ? (
         <SceneAI mode={mode} accent="#8b83ff" />
+      ) : view === "smart" ? (
+        <SmartMonitor mode={mode} accent="#8b83ff" />
       ) : (
         SnapshotView()
       )}
