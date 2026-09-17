@@ -63,7 +63,7 @@ export default function LiveDetect({
         {([
           { id: "snapshot", label: "🖼️ Snapshot" },
           { id: "live", label: "🔴 Live camera" },
-          { id: "scene", label: "🧠 Scene AI · LOVAIC SLM" },
+          { id: "scene", label: "🧠 LOVAIC SLM" },
         ] as const).map((t) => (
           <button
             key={t.id}
