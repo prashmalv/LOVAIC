@@ -182,8 +182,14 @@ def _ffmpeg_proc(url: str) -> subprocess.Popen:
     """
     cmd = ["ffmpeg", "-hide_banner", "-loglevel", "error"]
     if url.startswith("rtsp"):
-        cmd += ["-rtsp_transport", "tcp"]
-    cmd += ["-rw_timeout", "20000000", "-i", url,
+        # RTSP demuxers reject -rw_timeout (that's an HTTP/TCP I/O option); the
+        # correct socket-read timeout for RTSP is -timeout (microseconds). Using
+        # -rw_timeout here makes ffmpeg exit with "Option not found" → the feed
+        # shows "stream unavailable" even though the camera is fine.
+        cmd += ["-rtsp_transport", "tcp", "-timeout", "20000000"]
+    else:
+        cmd += ["-rw_timeout", "20000000"]
+    cmd += ["-i", url,
             "-an", "-f", "rawvideo", "-pix_fmt", "bgr24",
             "-vf", f"scale={FF_W}:{FF_H}", "-"]
     env = os.environ.copy()
