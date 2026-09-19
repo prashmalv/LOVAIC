@@ -556,6 +556,23 @@ def schemes(state: str = "Madhya Pradesh", category: str = "all"):
     return {"schemes": analytics.schemes(state, category)}
 
 
+# --- NVR / IP-camera discovery --------------------------------------------
+@app.post("/api/discover")
+def discover_cameras(
+    host: str = Form(...),
+    user: str = Form(""),
+    pwd: str = Form(""),
+    rtsp_port: int = Form(554),
+    channels: int = Form(16),
+    vendor: str = Form("dahua"),
+    sub: int = Form(0),
+):
+    """Enumerate live channels on an NVR/camera and return connectable RTSP URLs."""
+    from app import discover
+    return discover.discover(host, user=user, pwd=pwd, rtsp_port=rtsp_port,
+                             channels=channels, vendor=vendor, sub=sub)
+
+
 # --- Yum! India: POS Intelligence + Store Performance Copilot --------------
 @app.get("/api/yum/insights")
 def yum_insights():

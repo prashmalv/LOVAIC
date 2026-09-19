@@ -295,6 +295,54 @@ export async function schemes(state: string, category: string): Promise<Scheme[]
   return (await res.json()).schemes;
 }
 
+// --- NVR / IP-camera discovery --------------------------------------------
+
+export interface DiscoveredCamera {
+  channel: number;
+  name: string;
+  url: string;
+  display_url: string;
+  codec: string;
+  width: number;
+  height: number;
+  fps: number;
+}
+
+export interface DiscoverResult {
+  ok: boolean;
+  error?: string;
+  host?: string;
+  vendor?: string;
+  vendor_label?: string;
+  scanned?: number;
+  found?: number;
+  private?: boolean;
+  cameras: DiscoveredCamera[];
+  note?: string | null;
+}
+
+export async function discoverCameras(form: {
+  host: string;
+  user?: string;
+  pwd?: string;
+  rtsp_port?: number;
+  channels?: number;
+  vendor?: string;
+  sub?: number;
+}): Promise<DiscoverResult> {
+  const fd = new FormData();
+  fd.append("host", form.host);
+  fd.append("user", form.user ?? "");
+  fd.append("pwd", form.pwd ?? "");
+  fd.append("rtsp_port", String(form.rtsp_port ?? 554));
+  fd.append("channels", String(form.channels ?? 16));
+  fd.append("vendor", form.vendor ?? "dahua");
+  fd.append("sub", String(form.sub ?? 0));
+  const res = await fetch(`${API_BASE}/api/discover`, { method: "POST", body: fd });
+  if (!res.ok) throw new Error(`discover failed (${res.status})`);
+  return res.json();
+}
+
 // --- Yum! India: POS Intelligence + Store Performance Copilot -------------
 
 export interface YumInsights {

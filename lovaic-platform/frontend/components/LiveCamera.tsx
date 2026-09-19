@@ -4,6 +4,7 @@ import { detect, DetectResult, streamUrl } from "@/lib/api";
 import { DetectMode } from "@/lib/config";
 import { SeverityPill } from "./ui";
 import ZoneEditor, { Zone } from "./ZoneEditor";
+import CameraDiscovery from "./CameraDiscovery";
 
 const CW = 640; // capture width sent to the engine
 
@@ -285,6 +286,7 @@ function RemoteStream({ mode, accent, seg, privacy, gender }: { mode: DetectMode
   const [zone, setZone] = useState<Zone>({ linePos: 0.5, roi: null });
   const [editZone, setEditZone] = useState(false);
   const [lastSrc, setLastSrc] = useState("");
+  const [showDiscover, setShowDiscover] = useState(false);
   const connectTo = (s: string) => {
     setLastSrc(s);
     setActive(streamUrl(s, mode, { count, line, seg, privacy, gender, classes, linePos: zone.linePos, roi: zone.roi }));
@@ -327,6 +329,26 @@ function RemoteStream({ mode, accent, seg, privacy, gender }: { mode: DetectMode
             </button>
           ))}
         </div>
+
+        {/* NVR discovery */}
+        <button
+          className="pill mt-3"
+          style={{ cursor: "pointer", color: showDiscover ? accent : "var(--text-dim)", borderColor: showDiscover ? accent : "var(--border)" }}
+          onClick={() => setShowDiscover((v) => !v)}
+        >
+          🔍 Discover NVR cameras {showDiscover ? "▲" : "▼"}
+        </button>
+        {showDiscover && (
+          <div className="mt-3">
+            <CameraDiscovery
+              accent={accent}
+              onConnect={(u) => {
+                setUrl(u);
+                connectTo(u);
+              }}
+            />
+          </div>
+        )}
 
         {/* Footfall line-crossing counter */}
         <div className="flex items-center justify-between mt-4 p-3 rounded-xl" style={{ background: "var(--surface-2)" }}>
