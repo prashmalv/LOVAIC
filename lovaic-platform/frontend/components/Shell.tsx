@@ -27,11 +27,26 @@ export default function Shell({
   const pathname = usePathname();
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   useEffect(() => {
     const s = getSession();
     setSession(s);
+    const saved =
+      (typeof document !== "undefined" && document.documentElement.dataset.theme) || "dark";
+    setTheme(saved === "light" ? "light" : "dark");
   }, []);
+
+  const toggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    document.documentElement.dataset.theme = next;
+    try {
+      localStorage.setItem("lovaic-theme", next);
+    } catch {
+      /* ignore */
+    }
+  };
 
   return (
     <div className="flex min-h-screen">
@@ -109,7 +124,7 @@ export default function Shell({
           className="flex items-center justify-between px-8 py-4 sticky top-0 z-10"
           style={{
             borderBottom: "1px solid var(--border-soft)",
-            background: "rgba(7,9,18,0.72)",
+            background: "var(--header-bg)",
             backdropFilter: "blur(12px)",
           }}
         >
@@ -117,6 +132,14 @@ export default function Shell({
             <span className="live-dot" /> Vision engine online · {nav.length} modules
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={toggleTheme}
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              className="w-9 h-9 rounded-full flex items-center justify-center"
+              style={{ background: "var(--surface-2)", border: "1px solid var(--border)", cursor: "pointer", fontSize: 15 }}
+            >
+              {theme === "dark" ? "☀️" : "🌙"}
+            </button>
             <div className="text-right">
               <div className="text-sm font-semibold">{session?.org ?? "—"}</div>
               <div className="text-xs" style={{ color: "var(--text-faint)" }}>

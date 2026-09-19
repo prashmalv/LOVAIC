@@ -241,7 +241,7 @@ function Webcam({ mode, accent, seg, privacy, gender }: { mode: DetectMode; acce
           )}
         </div>
 
-        <div className="relative rounded-xl overflow-hidden" style={{ background: "#000", minHeight: 240 }}>
+        <div className="relative rounded-xl overflow-hidden" style={{ background: "var(--panel)", minHeight: 240 }}>
           {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
           <video ref={videoRef} playsInline muted style={{ width: "100%", display: "block" }} />
           <canvas
@@ -430,7 +430,7 @@ function RemoteStream({ mode, accent, seg, privacy, gender }: { mode: DetectMode
             {active ? "● LIVE ANNOTATED FEED" : "No feed connected"}
           </div>
         </div>
-        <div className="rounded-xl overflow-hidden flex items-center justify-center" style={{ background: "#000", minHeight: 260, position: "relative" }}>
+        <div className="rounded-xl overflow-hidden flex items-center justify-center" style={{ background: "var(--panel)", minHeight: 260, position: "relative" }}>
           {active ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={active} alt="live stream" style={{ width: "100%", display: "block" }} />

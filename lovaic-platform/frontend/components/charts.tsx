@@ -17,12 +17,13 @@ import { Breakdown, Series } from "@/lib/api";
 const PALETTE = ["#6c63ff", "#23d0c5", "#ff6584", "#ffb347", "#4d9dff", "#22e0a1"];
 
 const tooltipStyle = {
-  background: "#12162a",
-  border: "1px solid #262c4a",
+  background: "var(--surface)",
+  border: "1px solid var(--border)",
   borderRadius: 12,
-  color: "#f2f4fb",
+  color: "var(--text)",
   fontSize: 12,
 };
+const AXIS = "#8a8fa0"; // neutral grey — legible on both dark grey and light bg
 
 export function TrendArea({ series, color = "#6c63ff" }: { series: Series; color?: string }) {
   const data = series.hours.map((h, i) => ({ hour: h, value: series.values[i] }));
@@ -37,12 +38,12 @@ export function TrendArea({ series, color = "#6c63ff" }: { series: Series; color
         </defs>
         <XAxis
           dataKey="hour"
-          tick={{ fill: "#5f6690", fontSize: 10 }}
+          tick={{ fill: AXIS, fontSize: 10 }}
           interval={3}
           axisLine={false}
           tickLine={false}
         />
-        <YAxis tick={{ fill: "#5f6690", fontSize: 10 }} axisLine={false} tickLine={false} />
+        <YAxis tick={{ fill: AXIS, fontSize: 10 }} axisLine={false} tickLine={false} />
         <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: color, strokeOpacity: 0.2 }} />
         <Area
           type="monotone"
@@ -88,7 +89,7 @@ export function BarList({ data, color = "#23d0c5" }: { data: Breakdown[]; color?
         <YAxis
           type="category"
           dataKey="name"
-          tick={{ fill: "#9aa0c0", fontSize: 11 }}
+          tick={{ fill: AXIS, fontSize: 11 }}
           width={110}
           axisLine={false}
           tickLine={false}

@@ -159,7 +159,7 @@ export default function SmartMonitor({ mode, accent = "#8b83ff" }: { mode: Detec
         </div>
 
         <div className="card p-3">
-          <div className="rounded-xl overflow-hidden" style={{ background: "#000", minHeight: 220 }}>
+          <div className="rounded-xl overflow-hidden" style={{ background: "var(--panel)", minHeight: 220 }}>
             {active ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={active} alt="live" style={{ width: "100%", display: "block" }} />

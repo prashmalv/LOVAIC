@@ -352,7 +352,7 @@ export default function CameraWall({
                   ✕
                 </button>
               </div>
-              <div className="rounded-xl overflow-hidden" style={{ background: "#000" }}>
+              <div className="rounded-xl overflow-hidden" style={{ background: "var(--panel)" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={f.url} alt={f.name} style={{ width: "100%", display: "block" }} />
               </div>

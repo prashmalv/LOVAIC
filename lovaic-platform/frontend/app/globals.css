@@ -2,15 +2,19 @@
 
 /* ===================== LOVAIC design system ===================== */
 :root {
-  --bg: #070912;
-  --bg-2: #0d1020;
-  --surface: #12162a;
-  --surface-2: #191d36;
-  --border: #262c4a;
-  --border-soft: #1d2340;
+  /* Dark theme (default) — soft charcoal grey with a faint cool tint,
+     not pure black. */
+  --bg: #14161e;
+  --bg-2: #1a1d27;
+  --surface: #21242f;
+  --surface-2: #2a2e3a;
+  --border: #363b48;
+  --border-soft: #2b3040;
   --text: #f2f4fb;
-  --text-dim: #9aa0c0;
-  --text-faint: #5f6690;
+  --text-dim: #a2a8c2;
+  --text-faint: #767c96;
+  --header-bg: rgba(20, 22, 30, 0.72);
+  --panel: #0f1117; /* video/stream letterbox */
 
   --brand: #6c63ff;
   --brand-2: #8b83ff;
@@ -23,6 +27,21 @@
 
   --gov: #23d0c5;
   --enterprise: #8b83ff;
+}
+
+/* Light theme — applied when the user toggles it (data-theme="light"). */
+:root[data-theme="light"] {
+  --bg: #f5f6fa;
+  --bg-2: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #eef0f6;
+  --border: #dcdfe9;
+  --border-soft: #e7e9f1;
+  --text: #171922;
+  --text-dim: #545a6c;
+  --text-faint: #888ea1;
+  --header-bg: rgba(255, 255, 255, 0.82);
+  --panel: #0f1117;
 }
 
 @theme inline {

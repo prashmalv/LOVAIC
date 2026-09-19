@@ -19,12 +19,13 @@ const ACCENT = "#e4002b"; // KFC/Yum red
 const PALETTE = ["#e4002b", "#ff8a4c", "#ffb347", "#8b83ff", "#23d0c5", "#4d9dff", "#22e0a1", "#ff6584"];
 
 const tooltipStyle = {
-  background: "#12162a",
-  border: "1px solid #262c4a",
+  background: "var(--surface)",
+  border: "1px solid var(--border)",
   borderRadius: 12,
-  color: "#f2f4fb",
+  color: "var(--text)",
   fontSize: 12,
 };
+const AXIS = "#8a8fa0"; // neutral grey — legible on both themes
 
 interface Msg {
   q: string;
@@ -322,8 +323,8 @@ function HoursChart({ hours, height = 220 }: { hours: { hour: number; sales: num
             <stop offset="100%" stopColor={ACCENT} stopOpacity={0} />
           </linearGradient>
         </defs>
-        <XAxis dataKey="hour" tick={{ fill: "#5f6690", fontSize: 10 }} interval={1} axisLine={false} tickLine={false} />
-        <YAxis tick={{ fill: "#5f6690", fontSize: 10 }} axisLine={false} tickLine={false} />
+        <XAxis dataKey="hour" tick={{ fill: AXIS, fontSize: 10 }} interval={1} axisLine={false} tickLine={false} />
+        <YAxis tick={{ fill: AXIS, fontSize: 10 }} axisLine={false} tickLine={false} />
         <Tooltip contentStyle={tooltipStyle} formatter={(v) => [`₹${Number(v).toLocaleString()}`, "sales"]} cursor={{ stroke: ACCENT, strokeOpacity: 0.2 }} />
         <Area type="monotone" dataKey="sales" stroke={ACCENT} strokeWidth={2} fill="url(#yum-hr)" />
       </AreaChart>
@@ -364,7 +365,7 @@ function SimpleBars({ data, label }: { data: { name: string; value: number }[]; 
     <ResponsiveContainer width="100%" height={Math.max(140, data.length * 30)}>
       <BarChart data={data} layout="vertical" margin={{ left: 10, right: 24 }}>
         <XAxis type="number" hide />
-        <YAxis type="category" dataKey="name" tick={{ fill: "#9aa0c0", fontSize: 10 }} width={140} axisLine={false} tickLine={false} />
+        <YAxis type="category" dataKey="name" tick={{ fill: AXIS, fontSize: 10 }} width={140} axisLine={false} tickLine={false} />
         <Tooltip contentStyle={tooltipStyle} formatter={(v) => [v as number, label]} cursor={{ fill: "#ffffff08" }} />
         <Bar dataKey="value" radius={[0, 6, 6, 0]}>
           {data.map((_, i) => (
