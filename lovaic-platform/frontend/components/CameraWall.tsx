@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { heatmapUrl, resetHeatmaps, streamStats, StreamStats, streamUrl } from "@/lib/api";
 import { DetectMode } from "@/lib/config";
+import CameraDiscovery from "./CameraDiscovery";
 
 interface RecRow {
   t: number;
@@ -197,10 +198,8 @@ export default function CameraWall({
 
   const removeFeed = (fid: string) => setFeeds((f) => f.filter((x) => x.fid !== fid));
 
-  // bulk add: one URL per line
-  const [bulk, setBulk] = useState("");
-  const addMany = () => {
-    const urls = bulk.split("\n").map((u) => u.trim()).filter(Boolean);
+  // shared: append one feed per URL, using the current Mode + footfall settings
+  const addUrls = (urls: string[]) => {
     if (!urls.length) return;
     setFeeds((prev) => {
       const next = [...prev];
@@ -210,8 +209,17 @@ export default function CameraWall({
       });
       return next;
     });
+  };
+
+  // bulk add: one URL per line
+  const [bulk, setBulk] = useState("");
+  const addMany = () => {
+    addUrls(bulk.split("\n").map((u) => u.trim()).filter(Boolean));
     setBulk("");
   };
+
+  // NVR discovery → add discovered cameras straight to the wall
+  const [showDiscover, setShowDiscover] = useState(false);
 
   const c = stats?.combined;
 
@@ -334,6 +342,27 @@ export default function CameraWall({
           />
         </label>
         <button className="btn btn-ghost" onClick={addMany}>+ Add all</button>
+      </div>
+
+      {/* NVR discovery — scan an NVR and add all its cameras to the wall */}
+      <div>
+        <button
+          className="pill"
+          style={{ cursor: "pointer", color: showDiscover ? accent : "var(--text-dim)", borderColor: showDiscover ? accent : "var(--border)" }}
+          onClick={() => setShowDiscover((v) => !v)}
+        >
+          🔍 Discover NVR cameras {showDiscover ? "▲" : "▼"}
+        </button>
+        {showDiscover && (
+          <div className="mt-3">
+            <CameraDiscovery
+              accent={accent}
+              connectLabel="Add to wall"
+              onConnect={(u) => addUrls([u])}
+              onConnectMany={(urls) => addUrls(urls)}
+            />
+          </div>
+        )}
       </div>
 
       {/* the wall */}

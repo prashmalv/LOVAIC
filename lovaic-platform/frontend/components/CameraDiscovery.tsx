@@ -12,9 +12,13 @@ const VENDORS = [
 export default function CameraDiscovery({
   accent = "#6c63ff",
   onConnect,
+  onConnectMany,
+  connectLabel = "Connect",
 }: {
   accent?: string;
   onConnect: (url: string) => void;
+  onConnectMany?: (urls: string[]) => void;
+  connectLabel?: string;
 }) {
   const [host, setHost] = useState("");
   const [user, setUser] = useState("admin");
@@ -119,14 +123,25 @@ export default function CameraDiscovery({
 
       {res?.ok && (
         <div className="mt-4">
-          <div className="text-sm font-semibold mb-2">
-            Found <span style={{ color: accent }}>{res.found}</span> live camera{res.found === 1 ? "" : "s"} on {res.host}
-            <span className="text-xs font-normal" style={{ color: "var(--text-faint)" }}> · {res.vendor_label} · scanned {res.scanned} ch</span>
+          <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+            <div className="text-sm font-semibold">
+              Found <span style={{ color: accent }}>{res.found}</span> live camera{res.found === 1 ? "" : "s"} on {res.host}
+              <span className="text-xs font-normal" style={{ color: "var(--text-faint)" }}> · {res.vendor_label} · scanned {res.scanned} ch</span>
+            </div>
+            {onConnectMany && res.cameras.length > 0 && (
+              <button
+                className="btn btn-primary"
+                style={{ background: `linear-gradient(120deg, ${accent}, var(--brand))`, padding: "0.4rem 0.8rem", fontSize: 13 }}
+                onClick={() => onConnectMany(res.cameras.map((c) => c.url))}
+              >
+                ➕ Add all {res.found} to wall
+              </button>
+            )}
           </div>
           {res.note && <div className="text-xs mb-2" style={{ color: "var(--text-faint)" }}>{res.note}</div>}
           <div className="grid sm:grid-cols-2 gap-2">
             {res.cameras.map((c) => (
-              <CameraCard key={c.channel} cam={c} accent={accent} onConnect={onConnect} />
+              <CameraCard key={c.channel} cam={c} accent={accent} onConnect={onConnect} connectLabel={connectLabel} />
             ))}
           </div>
         </div>
@@ -135,7 +150,7 @@ export default function CameraDiscovery({
   );
 }
 
-function CameraCard({ cam, accent, onConnect }: { cam: DiscoveredCamera; accent: string; onConnect: (url: string) => void }) {
+function CameraCard({ cam, accent, onConnect, connectLabel = "Connect" }: { cam: DiscoveredCamera; accent: string; onConnect: (url: string) => void; connectLabel?: string }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {
@@ -164,7 +179,7 @@ function CameraCard({ cam, accent, onConnect }: { cam: DiscoveredCamera; accent:
           style={{ background: `linear-gradient(120deg, ${accent}, var(--brand))`, padding: "0.4rem 0.6rem", fontSize: 13 }}
           onClick={() => onConnect(cam.url)}
         >
-          Connect
+          {connectLabel}
         </button>
         <button className="pill" style={{ cursor: "pointer", color: "var(--text-dim)", fontSize: 11 }} onClick={copy}>
           {copied ? "✓ Copied" : "Copy URL"}
