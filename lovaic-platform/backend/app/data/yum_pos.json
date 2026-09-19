@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-19T07:15:14.473081Z",
+  "generated_at": "2026-09-19T09:28:17.231780Z",
   "source_files": [
     "POS level Sample Store raw data.xlsx",
     "Sample POS Sales & Inward Data.xlsx"
@@ -305,30 +305,6 @@
     ],
     "slow_movers": [
       {
-        "name": "cello kleeno popular wiper",
-        "qty": -1,
-        "revenue": -189,
-        "category": "Others"
-      },
-      {
-        "name": "Dr. Oetker Funfoods Dr.Oetker Veg Mayo",
-        "qty": 0,
-        "revenue": 0,
-        "category": "Packaged Foods"
-      },
-      {
-        "name": "Fresh Wrap - 72 M",
-        "qty": 0,
-        "revenue": 20,
-        "category": "Others"
-      },
-      {
-        "name": "Nescafe Gold Blend Instant Coffee Powd",
-        "qty": 0,
-        "revenue": 0,
-        "category": "Beverages"
-      },
-      {
         "name": "Glucon D Orange 200 G",
         "qty": 1,
         "revenue": 75,
@@ -375,6 +351,30 @@
         "qty": 1,
         "revenue": 10,
         "category": "Uncategorized"
+      },
+      {
+        "name": "Chhedas Plain Salted Potato Chips 500G",
+        "qty": 1,
+        "revenue": 210,
+        "category": "Packaged Foods"
+      },
+      {
+        "name": "Surf Excel Detergent Bar, 200 G Pack O",
+        "qty": 1,
+        "revenue": 122,
+        "category": "Household Care"
+      },
+      {
+        "name": "Yummiez Veg Party Pack Pouch, 600 G",
+        "qty": 1,
+        "revenue": 355,
+        "category": "Packaged Foods"
+      },
+      {
+        "name": "Kwality Walts Ice Cream",
+        "qty": 1,
+        "revenue": 20,
+        "category": "Packaged Foods"
       }
     ],
     "discount": {

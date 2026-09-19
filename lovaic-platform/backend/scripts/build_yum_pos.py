@@ -179,8 +179,11 @@ def build_store_raw():
         for it in sorted(item_sales, key=lambda x: item_sales[x], reverse=True)[:12]
     ]
 
-    # slow movers / dead-stock (waste risk): stocked (has sales rows) but very low velocity
-    slow = sorted(item_qty.items(), key=lambda kv: kv[1])[:12]
+    # slow movers / dead-stock (waste risk): genuinely sold but at very low velocity.
+    # Exclude qty <= 0 — those are returns/voids/data noise, not slow-moving stock
+    # (they'd otherwise draw negative/zero bars that scatter across the chart).
+    slow = sorted(((it, q) for it, q in item_qty.items() if q >= 1),
+                  key=lambda kv: kv[1])[:12]
     slow_movers = [
         {"name": it[:38], "qty": round(q), "revenue": round(item_sales[it]),
          "category": item_cat.get(it, "")}
