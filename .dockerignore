@@ -2,10 +2,12 @@ venv/
 __pycache__/
 *.pyc
 .DS_Store
-temp_train_*/
+.git/
 images/
+saved_models/
+temp_train_*/
 
-# Old/unused models - only keep the best one
+# Large unused models — app only needs RLAI_LOVAIC_best_model.h5
 keras_cifar10_trained_model.h5
 keras_cifar10_trained_model_orig.h5
 lov_trained_model_Augmentation.h5
@@ -13,5 +15,11 @@ lov_trained_model_Augmentation_orig.h5
 RLAI_LOVAIC_trained_model_1.h5
 RLAI_LOVAIC_trained_model_1_Augmentation.h5
 
-# client-confidential source data (POS xlsx + solution blueprint) — do NOT publish
-YumDoc/
+*.ipynb
+oldlogo.png
+lovaic.png
+lvaic.py
+appRLAIWorking.py
+check.py
+resave_model.py
+train_model.py

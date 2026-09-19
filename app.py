@@ -7,7 +7,7 @@ from tensorflow.keras.models import load_model
 
 # --- Page Config ---
 st.set_page_config(
-    page_title="LOVAIC — AI Image Classifier",
+    page_title="LOVAIC - AI Image Classifier",
     page_icon="logo.png",
     layout="wide",
     initial_sidebar_state="expanded",
