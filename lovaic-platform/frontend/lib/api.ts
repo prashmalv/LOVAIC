@@ -294,3 +294,87 @@ export async function schemes(state: string, category: string): Promise<Scheme[]
   );
   return (await res.json()).schemes;
 }
+
+// --- Yum! India: POS Intelligence + Store Performance Copilot -------------
+
+export interface YumInsights {
+  generated_at: string;
+  source_files: string[];
+  store_raw: {
+    store: {
+      id: string | number;
+      city: string;
+      class: string;
+      type: string;
+      date_from: string;
+      date_to: string;
+    };
+    kpis: {
+      total_sales: number;
+      total_sales_fmt: string;
+      transactions: number;
+      line_items: number;
+      units_sold: number;
+      aov: number;
+      aov_fmt: string;
+      basket_size: number;
+      unique_skus: number;
+    };
+    hours: { hour: number; sales: number; txns: number }[];
+    peak_hour: number;
+    months: { name: string; value: number }[];
+    categories: { name: string; value: number; share: number }[];
+    brands: { name: string; value: number }[];
+    top_items: { name: string; revenue: number; qty: number; category: string }[];
+    slow_movers: { name: string; qty: number; revenue: number; category: string }[];
+    discount: {
+      lines_discounted: number;
+      discount_value: number;
+      discount_value_fmt: string;
+      overcharge_lines: number;
+      discount_pct_of_lines: number;
+    };
+  };
+  sales_sample: {
+    lines: number;
+    total_sales: number;
+    cities: { name: string; value: number; txns: number }[];
+    credit_share_pct: number;
+    credit_value: number;
+    credit_value_fmt: string;
+    price_anomalies: number;
+  };
+  inward: {
+    lines: number;
+    orders: number;
+    total_inward: number;
+    total_inward_fmt: string;
+    po_count: number;
+    avg_margin_pct: number;
+    best_margin: { name: string; purchase: number; mrp: number; margin_pct: number; qty: number }[];
+    worst_margin: { name: string; purchase: number; mrp: number; margin_pct: number; qty: number }[];
+  };
+  classification: { city: string; billed_stores: number; a: number; b: number; c: number }[];
+}
+
+export interface YumCopilotAnswer {
+  question: string;
+  answer: string;
+  recommendations: string[];
+  metrics: { label: string; value: string }[];
+  chart: string;
+  source: string;
+  suggested: string[];
+}
+
+export async function yumInsights(): Promise<YumInsights> {
+  const res = await fetch(`${API_BASE}/api/yum/insights`);
+  if (!res.ok) throw new Error("yum insights failed");
+  return res.json();
+}
+
+export async function yumCopilot(q: string): Promise<YumCopilotAnswer> {
+  const res = await fetch(`${API_BASE}/api/yum/copilot?q=${encodeURIComponent(q)}`);
+  if (!res.ok) throw new Error("yum copilot failed");
+  return res.json();
+}

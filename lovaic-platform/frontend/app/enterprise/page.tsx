@@ -2,6 +2,7 @@ import Link from "next/link";
 import { SectionTitle } from "@/components/ui";
 
 const TILES = [
+  { href: "/enterprise/yum", icon: "🍗", title: "Yum! India Showcase", metric: "CV + POS AI", sub: "6 vision layers · Store Copilot" },
   { href: "/enterprise/retail", icon: "🛒", title: "Retail Intelligence", metric: "1,860 footfall", sub: "14.2 min dwell · 31% conv." },
   { href: "/enterprise/bfsi", icon: "🏦", title: "BFSI Monitoring", metric: "SLA 92%", sub: "branch queues & compliance" },
   { href: "/enterprise/manufacturing", icon: "🏭", title: "Manufacturing", metric: "98% PPE", sub: "zone safety & anomalies" },

@@ -1,0 +1,613 @@
+{
+  "generated_at": "2026-09-19T07:15:14.473081Z",
+  "source_files": [
+    "POS level Sample Store raw data.xlsx",
+    "Sample POS Sales & Inward Data.xlsx"
+  ],
+  "store_raw": {
+    "store": {
+      "id": 11625,
+      "city": "Mumbai",
+      "class": "A",
+      "type": "Grocery",
+      "date_from": "04 Nov 2022",
+      "date_to": "30 Nov 2022"
+    },
+    "kpis": {
+      "total_sales": 1860375,
+      "total_sales_fmt": "\u20b918.60 L",
+      "transactions": 6129,
+      "line_items": 23357,
+      "units_sold": 34430,
+      "aov": 303.5,
+      "aov_fmt": "\u20b9304",
+      "basket_size": 5.62,
+      "unique_skus": 3841
+    },
+    "hours": [
+      {
+        "hour": 0,
+        "sales": 0,
+        "txns": 0
+      },
+      {
+        "hour": 1,
+        "sales": 0,
+        "txns": 0
+      },
+      {
+        "hour": 2,
+        "sales": 0,
+        "txns": 0
+      },
+      {
+        "hour": 3,
+        "sales": 0,
+        "txns": 0
+      },
+      {
+        "hour": 4,
+        "sales": 0,
+        "txns": 0
+      },
+      {
+        "hour": 5,
+        "sales": 0,
+        "txns": 0
+      },
+      {
+        "hour": 6,
+        "sales": 0,
+        "txns": 0
+      },
+      {
+        "hour": 7,
+        "sales": 0,
+        "txns": 0
+      },
+      {
+        "hour": 8,
+        "sales": 43863,
+        "txns": 132
+      },
+      {
+        "hour": 9,
+        "sales": 91451,
+        "txns": 290
+      },
+      {
+        "hour": 10,
+        "sales": 110345,
+        "txns": 352
+      },
+      {
+        "hour": 11,
+        "sales": 133828,
+        "txns": 434
+      },
+      {
+        "hour": 12,
+        "sales": 130744,
+        "txns": 408
+      },
+      {
+        "hour": 13,
+        "sales": 101482,
+        "txns": 318
+      },
+      {
+        "hour": 14,
+        "sales": 79125,
+        "txns": 260
+      },
+      {
+        "hour": 15,
+        "sales": 67554,
+        "txns": 219
+      },
+      {
+        "hour": 16,
+        "sales": 66588,
+        "txns": 227
+      },
+      {
+        "hour": 17,
+        "sales": 137410,
+        "txns": 405
+      },
+      {
+        "hour": 18,
+        "sales": 201099,
+        "txns": 689
+      },
+      {
+        "hour": 19,
+        "sales": 230859,
+        "txns": 782
+      },
+      {
+        "hour": 20,
+        "sales": 222259,
+        "txns": 728
+      },
+      {
+        "hour": 21,
+        "sales": 159381,
+        "txns": 567
+      },
+      {
+        "hour": 22,
+        "sales": 80782,
+        "txns": 307
+      },
+      {
+        "hour": 23,
+        "sales": 3605,
+        "txns": 11
+      }
+    ],
+    "peak_hour": 19,
+    "months": [
+      {
+        "name": "Nov",
+        "value": 1860375
+      }
+    ],
+    "categories": [
+      {
+        "name": "Packaged Foods",
+        "value": 706933,
+        "share": 38.0
+      },
+      {
+        "name": "Uncategorized",
+        "value": 436008,
+        "share": 23.4
+      },
+      {
+        "name": "Packaged Staples",
+        "value": 236924,
+        "share": 12.7
+      },
+      {
+        "name": "Beverages",
+        "value": 216415,
+        "share": 11.6
+      },
+      {
+        "name": "Personal Care",
+        "value": 118533,
+        "share": 6.4
+      },
+      {
+        "name": "Household Care",
+        "value": 82637,
+        "share": 4.4
+      },
+      {
+        "name": "Others",
+        "value": 48406,
+        "share": 2.6
+      },
+      {
+        "name": "Pet Supplies",
+        "value": 8318,
+        "share": 0.4
+      }
+    ],
+    "brands": [
+      {
+        "name": "Amul",
+        "value": 194727
+      },
+      {
+        "name": "Id",
+        "value": 39515
+      },
+      {
+        "name": "Britannia",
+        "value": 37795
+      },
+      {
+        "name": "Prabhat",
+        "value": 37572
+      },
+      {
+        "name": "Gowardhan",
+        "value": 35028
+      },
+      {
+        "name": "Yummiez",
+        "value": 27094
+      },
+      {
+        "name": "Haldirams",
+        "value": 25753
+      },
+      {
+        "name": "Kavisha",
+        "value": 22612
+      }
+    ],
+    "top_items": [
+      {
+        "name": "Amul Milk - Taaza, 500Ml Pack",
+        "revenue": 37414,
+        "qty": 1439,
+        "category": "Beverages"
+      },
+      {
+        "name": "Amul Pasteurised Butter 500 Gms",
+        "revenue": 23850,
+        "qty": 90,
+        "category": "Packaged Foods"
+      },
+      {
+        "name": "Id Idli & Dosa Batter (1000G 271205",
+        "revenue": 20400,
+        "qty": 240,
+        "category": "Packaged Foods"
+      },
+      {
+        "name": "Amul Milk - Gold, 500Ml Pack",
+        "revenue": 19584,
+        "qty": 612,
+        "category": "Beverages"
+      },
+      {
+        "name": "Britannia Whole Wheat Bread - Rich In ",
+        "revenue": 17050,
+        "qty": 341,
+        "category": "Packaged Foods"
+      },
+      {
+        "name": "Prabhat Curd Pouch Regular 1 Kg",
+        "revenue": 16565,
+        "qty": 216,
+        "category": "Packaged Foods"
+      },
+      {
+        "name": "bislerry 20L water",
+        "revenue": 13860,
+        "qty": 150,
+        "category": "Uncategorized"
+      },
+      {
+        "name": "Gowardhan Fresh Paneer Classic Block 2",
+        "revenue": 13034,
+        "qty": 133,
+        "category": "Packaged Foods"
+      },
+      {
+        "name": "Id Natural Paneer 200 Gms",
+        "revenue": 11990,
+        "qty": 109,
+        "category": "Packaged Foods"
+      },
+      {
+        "name": "onian 1kg.",
+        "revenue": 10710,
+        "qty": 250,
+        "category": "Uncategorized"
+      },
+      {
+        "name": "Britannia Vitarich Sandwich Premium Wh",
+        "revenue": 10705,
+        "qty": 306,
+        "category": "Packaged Foods"
+      },
+      {
+        "name": "Prabhat Dahi Home Flavored Yogurt Cups",
+        "revenue": 10620,
+        "qty": 140,
+        "category": "Packaged Foods"
+      }
+    ],
+    "slow_movers": [
+      {
+        "name": "cello kleeno popular wiper",
+        "qty": -1,
+        "revenue": -189,
+        "category": "Others"
+      },
+      {
+        "name": "Dr. Oetker Funfoods Dr.Oetker Veg Mayo",
+        "qty": 0,
+        "revenue": 0,
+        "category": "Packaged Foods"
+      },
+      {
+        "name": "Fresh Wrap - 72 M",
+        "qty": 0,
+        "revenue": 20,
+        "category": "Others"
+      },
+      {
+        "name": "Nescafe Gold Blend Instant Coffee Powd",
+        "qty": 0,
+        "revenue": 0,
+        "category": "Beverages"
+      },
+      {
+        "name": "Glucon D Orange 200 G",
+        "qty": 1,
+        "revenue": 75,
+        "category": "Beverages"
+      },
+      {
+        "name": "Glucon-D Instant Energy Health Drink -",
+        "qty": 1,
+        "revenue": 47,
+        "category": "Beverages"
+      },
+      {
+        "name": "Bufin Soap Strips Rose",
+        "qty": 1,
+        "revenue": 40,
+        "category": "Personal Care"
+      },
+      {
+        "name": "Glucon-D Energy Drink - Pure Glucose, ",
+        "qty": 1,
+        "revenue": 31,
+        "category": "Beverages"
+      },
+      {
+        "name": "Gillette Mach 3 Blade Cart 4 Pc Mrp 44",
+        "qty": 1,
+        "revenue": 449,
+        "category": "Personal Care"
+      },
+      {
+        "name": "Premierspecial - Facial Tissues 100 No",
+        "qty": 1,
+        "revenue": 65,
+        "category": "Household Care"
+      },
+      {
+        "name": "Kwality Walls Frozen Dessert - Chocola",
+        "qty": 1,
+        "revenue": 150,
+        "category": "Packaged Foods"
+      },
+      {
+        "name": "tic tac seeds elaichi & ginger flavour",
+        "qty": 1,
+        "revenue": 10,
+        "category": "Uncategorized"
+      }
+    ],
+    "discount": {
+      "lines_discounted": 1049,
+      "discount_value": 34391,
+      "discount_value_fmt": "\u20b934.4K",
+      "overcharge_lines": 0,
+      "discount_pct_of_lines": 4.5
+    }
+  },
+  "sales_sample": {
+    "lines": 610,
+    "total_sales": 115128,
+    "cities": [
+      {
+        "name": "Mumbai",
+        "value": 115128,
+        "txns": 319
+      }
+    ],
+    "credit_share_pct": 15.6,
+    "credit_value": 18017,
+    "credit_value_fmt": "\u20b918.0K",
+    "price_anomalies": 0
+  },
+  "inward": {
+    "lines": 103,
+    "orders": 25,
+    "total_inward": 2919961,
+    "total_inward_fmt": "\u20b929.20 L",
+    "po_count": 25,
+    "avg_margin_pct": 14.2,
+    "best_margin": [
+      {
+        "name": "Maha Jyothi Lamp Oil",
+        "purchase": 6000,
+        "mrp": 9500,
+        "margin_pct": 36.8,
+        "qty": 20
+      },
+      {
+        "name": "Modern pizza base ",
+        "purchase": 2600,
+        "mrp": 4000,
+        "margin_pct": 35.0,
+        "qty": 4
+      },
+      {
+        "name": "ISHWARYAM LMP OIL 1 LTR",
+        "purchase": 12381,
+        "mrp": 18000,
+        "margin_pct": 31.2,
+        "qty": 3
+      },
+      {
+        "name": "ISHWARYAM LAMP OIL 500G",
+        "purchase": 6191,
+        "mrp": 9000,
+        "margin_pct": 31.2,
+        "qty": 6
+      },
+      {
+        "name": "Himalaya Baby Soap N/Skn Almnd+Oli",
+        "purchase": 4962,
+        "mrp": 7200,
+        "margin_pct": 31.1,
+        "qty": 3
+      },
+      {
+        "name": "Mangaldeep Agarabathy Sadhvi 100'S",
+        "purchase": 2425,
+        "mrp": 3500,
+        "margin_pct": 30.7,
+        "qty": 20
+      },
+      {
+        "name": "Kiruba Non Fruit Vinegar 500 Ml Ja",
+        "purchase": 2100,
+        "mrp": 3000,
+        "margin_pct": 30.0,
+        "qty": 3
+      },
+      {
+        "name": "Packia Washing Soda 100G",
+        "purchase": 1190,
+        "mrp": 1700,
+        "margin_pct": 30.0,
+        "qty": 10
+      }
+    ],
+    "worst_margin": [
+      {
+        "name": "Mother Dairy Full Cream Milk 500 M",
+        "purchase": 2850,
+        "mrp": 2900,
+        "margin_pct": 1.7,
+        "qty": 20
+      },
+      {
+        "name": "Mother Dairy Full Cream Milk 1Ltr",
+        "purchase": 5600,
+        "mrp": 5700,
+        "margin_pct": 1.8,
+        "qty": 28
+      },
+      {
+        "name": "Mother Dairy Cow Milk 1Ltr",
+        "purchase": 4800,
+        "mrp": 4900,
+        "margin_pct": 2.0,
+        "qty": 28
+      },
+      {
+        "name": "Mother Dairy  Cow Milk 500 Ml",
+        "purchase": 2450,
+        "mrp": 2500,
+        "margin_pct": 2.0,
+        "qty": 20
+      },
+      {
+        "name": "Amul Gold Milk 500 Ml",
+        "purchase": 2825,
+        "mrp": 2900,
+        "margin_pct": 2.6,
+        "qty": 18
+      },
+      {
+        "name": "Amul milk 500ml",
+        "purchase": 2825,
+        "mrp": 2900,
+        "margin_pct": 2.6,
+        "qty": 12
+      },
+      {
+        "name": "Amul Gold [Fcm] 1 Ltr Plpch Gold M",
+        "purchase": 5550,
+        "mrp": 5700,
+        "margin_pct": 2.6,
+        "qty": 10
+      },
+      {
+        "name": "amul 2lit",
+        "purchase": 10900,
+        "mrp": 11200,
+        "margin_pct": 2.7,
+        "qty": 1
+      }
+    ]
+  },
+  "classification": [
+    {
+      "city": "Mumbai",
+      "billed_stores": 208,
+      "a": 110,
+      "b": 65,
+      "c": 33
+    },
+    {
+      "city": "Delhi-NCR",
+      "billed_stores": 197,
+      "a": 101,
+      "b": 58,
+      "c": 38
+    },
+    {
+      "city": "Bangalore",
+      "billed_stores": 130,
+      "a": 70,
+      "b": 48,
+      "c": 12
+    },
+    {
+      "city": "Ahmedabad",
+      "billed_stores": 122,
+      "a": 63,
+      "b": 44,
+      "c": 15
+    },
+    {
+      "city": "Pune",
+      "billed_stores": 121,
+      "a": 43,
+      "b": 49,
+      "c": 29
+    },
+    {
+      "city": "Hyderabad",
+      "billed_stores": 112,
+      "a": 65,
+      "b": 29,
+      "c": 18
+    },
+    {
+      "city": "Nagpur",
+      "billed_stores": 68,
+      "a": 37,
+      "b": 21,
+      "c": 10
+    },
+    {
+      "city": "Chennai",
+      "billed_stores": 66,
+      "a": 33,
+      "b": 27,
+      "c": 6
+    },
+    {
+      "city": "Surat",
+      "billed_stores": 34,
+      "a": 20,
+      "b": 8,
+      "c": 6
+    },
+    {
+      "city": "Jaipur",
+      "billed_stores": 27,
+      "a": 12,
+      "b": 7,
+      "c": 8
+    },
+    {
+      "city": "Kolkata",
+      "billed_stores": 16,
+      "a": 8,
+      "b": 6,
+      "c": 2
+    },
+    {
+      "city": "Grand Total",
+      "billed_stores": 1101,
+      "a": 562,
+      "b": 362,
+      "c": 177
+    }
+  ]
+}

@@ -14,14 +14,21 @@ const SOURCES = [
   { id: "upload", label: "Upload", icon: "📁" },
 ];
 
+export interface SampleFrame {
+  label: string;
+  url: string;
+}
+
 export default function LiveDetect({
   mode,
   accent = "#6c63ff",
   hint,
+  samples,
 }: {
   mode: DetectMode;
   accent?: string;
   hint?: string;
+  samples?: SampleFrame[];
 }) {
   const [preview, setPreview] = useState<string | null>(null);
   const [result, setResult] = useState<DetectResult | null>(null);
@@ -57,6 +64,21 @@ export default function LiveDetect({
   const onFile = (f?: File | null) => {
     if (f) run(f);
   };
+
+  const runSample = useCallback(
+    async (url: string) => {
+      try {
+        setError(null);
+        const res = await fetch(url);
+        const blob = await res.blob();
+        const name = url.split("/").pop() || "sample.jpg";
+        run(new File([blob], name, { type: blob.type || "image/jpeg" }));
+      } catch {
+        setError("Could not load the sample frame.");
+      }
+    },
+    [run]
+  );
 
   return (
     <div>
@@ -124,6 +146,29 @@ export default function LiveDetect({
             </button>
           ))}
         </div>
+
+        {samples && samples.length > 0 && (
+          <div className="mb-3">
+            <div className="text-xs uppercase tracking-wider mb-2" style={{ color: "var(--text-faint)" }}>
+              Sample frames · click to analyze
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {samples.map((s) => (
+                <button
+                  key={s.url}
+                  onClick={() => runSample(s.url)}
+                  title={s.label}
+                  className="shrink-0 rounded-lg overflow-hidden"
+                  style={{ border: "1px solid var(--border)", cursor: "pointer", width: 96, background: "var(--surface-2)" }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={s.url} alt={s.label} style={{ width: 96, height: 60, objectFit: "cover", display: "block" }} />
+                  <div className="text-[10px] px-1 py-1 text-center truncate" style={{ color: "var(--text-dim)" }}>{s.label}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div
           className="dropzone flex flex-col items-center justify-center text-center p-8"

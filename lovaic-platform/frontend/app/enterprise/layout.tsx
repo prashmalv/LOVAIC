@@ -2,6 +2,7 @@ import Shell, { NavItem } from "@/components/Shell";
 
 const NAV: NavItem[] = [
   { href: "/enterprise", label: "Overview", icon: "📊" },
+  { href: "/enterprise/yum", label: "Yum! India", icon: "🍗", tag: "CLIENT" },
   { href: "/enterprise/wall", label: "Camera Wall", icon: "🎛️", tag: "LIVE" },
   { href: "/enterprise/retail", label: "Retail Intelligence", icon: "🛒", tag: "LIVE" },
   { href: "/enterprise/bfsi", label: "BFSI Monitoring", icon: "🏦" },

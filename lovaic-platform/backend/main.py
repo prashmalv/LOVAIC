@@ -548,3 +548,16 @@ def dustbins():
 @app.get("/api/schemes")
 def schemes(state: str = "Madhya Pradesh", category: str = "all"):
     return {"schemes": analytics.schemes(state, category)}
+
+
+# --- Yum! India: POS Intelligence + Store Performance Copilot --------------
+@app.get("/api/yum/insights")
+def yum_insights():
+    from app import yum
+    return yum.insights()
+
+
+@app.get("/api/yum/copilot")
+def yum_copilot(q: str = ""):
+    from app import yum
+    return yum.copilot(q)
