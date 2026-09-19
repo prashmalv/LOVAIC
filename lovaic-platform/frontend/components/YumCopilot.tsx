@@ -60,7 +60,7 @@ export default function YumCopilot() {
     } catch {
       setMsgs((m) =>
         m.map((x, i) =>
-          i === 0 ? { ...x, a: { ...EMPTY, question: q, answer: "Copilot unreachable — start the backend on port 8000." } } : x
+          i === 0 ? { ...x, a: { ...EMPTY, question: q, answer: "LOVAIC Assistance unreachable — start the backend on port 8000." } } : x
         )
       );
     } finally {
@@ -176,12 +176,12 @@ export default function YumCopilot() {
       {/* Copilot */}
       <div className="card p-5">
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-xl">🤖</span>
-          <div className="font-bold text-lg">Store Performance Copilot</div>
+          <span className="text-xl">✨</span>
+          <div className="font-bold text-lg">LOVAIC Assistance</div>
           <span className="pill" style={{ fontSize: 10, color: ACCENT, borderColor: ACCENT }}>AI on POS</span>
         </div>
         <p className="text-sm mb-4" style={{ color: "var(--text-dim)" }}>
-          Ask in plain language — the copilot answers from this store&apos;s real POS &amp; inward data with numbers and recommended actions. Every figure traces to the source files.
+          Ask in plain language — LOVAIC Assistance answers from this store&apos;s real POS &amp; inward data with numbers and recommended actions. Every figure traces to the source files.
         </p>
 
         <div className="flex flex-wrap gap-2 mb-3">

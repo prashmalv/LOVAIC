@@ -10,7 +10,7 @@ export default function YumPage() {
       <SectionTitle
         eyebrow="Client Showcase · KFC · Pizza Hut · Taco Bell · Costa Coffee"
         title="Yum! India — AI Empowerment Blueprint"
-        desc="Two capability layers from the RLAI × Yum! India solution blueprint: the LOVAIC™ in-restaurant computer-vision bundle, and an AI copilot that turns raw POS data into operator decisions. Everything below runs on the real vision engine and real POS files — nothing is mocked."
+        desc="Two capability layers from the RLAI × Yum! India solution blueprint: the LOVAIC™ in-restaurant computer-vision bundle, and an AI assistant that turns raw POS data into operator decisions. Everything below runs on the real vision engine and real POS files — nothing is mocked."
       />
 
       {/* CV bundle */}
@@ -42,10 +42,10 @@ export default function YumPage() {
             Pillar D + H · AI Layer on POS Data
           </span>
         </div>
-        <h3 className="text-xl font-bold mb-1">POS Intelligence &amp; Store Performance Copilot</h3>
+        <h3 className="text-xl font-bold mb-1">POS Intelligence &amp; LOVAIC Assistance</h3>
         <p className="text-sm mb-5" style={{ color: "var(--text-dim)" }}>
           The same store&apos;s point-of-sale and inward-supply data, turned into an operator-ready
-          dashboard and a plain-language copilot. This is how AI layers on top of the numbers Yum
+          dashboard and a plain-language AI assistant. This is how AI layers on top of the numbers Yum
           already collects — surfacing demand curves, margin leakage, waste risk and procurement
           opportunities without a data team.
         </p>
