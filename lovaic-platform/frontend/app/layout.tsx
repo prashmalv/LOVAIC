@@ -11,7 +11,9 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className="h-full antialiased">
+    // suppressHydrationWarning: the inline theme script below sets data-theme
+    // before React hydrates, so the server/client attribute diff is expected.
+    <html lang="en" className="h-full antialiased" suppressHydrationWarning>
       <head>
         {/* Apply the saved theme before paint to avoid a flash. Default: dark. */}
         <script
